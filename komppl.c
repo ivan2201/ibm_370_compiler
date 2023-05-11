@@ -1817,7 +1817,7 @@ parse_avi:
                 ZKARD();
                 //BC
                 memcpy(ASS_CARD._BUFCARD.OPERAC, "BC", 2);
-                strcpy(ASS_CARD._BUFCARD.OPERAND, "8,*+6");
+                strcpy(ASS_CARD._BUFCARD.OPERAND, "8,*+12");
                 ASS_CARD._BUFCARD.OPERAND[strlen(ASS_CARD._BUFCARD.OPERAND)] = ' ';
                 ZKARD();
                 //LH                  @RRAB,@FALS
@@ -1827,7 +1827,7 @@ parse_avi:
                 ZKARD();
                 //BC                  15,*+4
                 memcpy(ASS_CARD._BUFCARD.OPERAC, "BC", 2);
-                strcpy(ASS_CARD._BUFCARD.OPERAND, "15,*+4");
+                strcpy(ASS_CARD._BUFCARD.OPERAND, "15,*+8");
                 ASS_CARD._BUFCARD.OPERAND[strlen(ASS_CARD._BUFCARD.OPERAND)] = ' ';
                 ZKARD();
                 //LH                  @RRAB.@TRUE
@@ -2031,7 +2031,7 @@ parse_avi:
           ZKARD();
           //BC
           memcpy(ASS_CARD._BUFCARD.OPERAC, "BC", 2);
-          strcpy(ASS_CARD._BUFCARD.OPERAND, "8,*+6");
+          strcpy(ASS_CARD._BUFCARD.OPERAND, "8,*+12");
           ASS_CARD._BUFCARD.OPERAND[strlen(ASS_CARD._BUFCARD.OPERAND)] = ' ';
           ZKARD();
           //LH                  @RRAB,@FALS
@@ -2041,7 +2041,7 @@ parse_avi:
           ZKARD();
           //BC                  15,*+4
           memcpy(ASS_CARD._BUFCARD.OPERAC, "BC", 2);
-          strcpy(ASS_CARD._BUFCARD.OPERAND, "15,*+4");
+          strcpy(ASS_CARD._BUFCARD.OPERAND, "15,*+8");
           ASS_CARD._BUFCARD.OPERAND[strlen(ASS_CARD._BUFCARD.OPERAND)] = ' ';
           ZKARD();
           //LH                  @RRAB.@TRUE
@@ -2182,7 +2182,7 @@ parse_high_level_avi:
                   ZKARD();
                   //BC
                   memcpy(ASS_CARD._BUFCARD.OPERAC, "BC", 2);
-                  strcpy(ASS_CARD._BUFCARD.OPERAND, "8,*+6");
+                  strcpy(ASS_CARD._BUFCARD.OPERAND, "8,*+12");
                   ASS_CARD._BUFCARD.OPERAND[strlen(ASS_CARD._BUFCARD.OPERAND)] = ' ';
                   COMMENT = "if eq goto load true";
                   ZKARD();
@@ -2194,7 +2194,7 @@ parse_high_level_avi:
                   ZKARD();
                   //BC                  15,*+4
                   memcpy(ASS_CARD._BUFCARD.OPERAC, "BC", 2);
-                  strcpy(ASS_CARD._BUFCARD.OPERAND, "15,*+4");
+                  strcpy(ASS_CARD._BUFCARD.OPERAND, "15,*+8");
                   ASS_CARD._BUFCARD.OPERAND[strlen(ASS_CARD._BUFCARD.OPERAND)] = ' ';
                   COMMENT = "goto end of equal operator";
                   ZKARD();
@@ -2402,7 +2402,7 @@ parse_high_level_avi:
             ZKARD();
             //BC
             memcpy(ASS_CARD._BUFCARD.OPERAC, "BC", 2);
-            strcpy(ASS_CARD._BUFCARD.OPERAND, "8,*+6");
+            strcpy(ASS_CARD._BUFCARD.OPERAND, "8,*+12");
             ASS_CARD._BUFCARD.OPERAND[strlen(ASS_CARD._BUFCARD.OPERAND)] = ' ';
             COMMENT = "goto load TRUE if equals";
             ZKARD();
@@ -2414,7 +2414,7 @@ parse_high_level_avi:
             ZKARD();
             //BC                  15,*+4
             memcpy(ASS_CARD._BUFCARD.OPERAC, "BC", 2);
-            strcpy(ASS_CARD._BUFCARD.OPERAND, "15,*+4");
+            strcpy(ASS_CARD._BUFCARD.OPERAND, "15,*+8");
             ASS_CARD._BUFCARD.OPERAND[strlen(ASS_CARD._BUFCARD.OPERAND)] = ' ';
             COMMENT = "goto store result";
             ZKARD();
