@@ -28,11 +28,11 @@
 #define UTF8                                      /* - указываем что в системе utf-8 
 																											 для перерассчёта длины комментариев */
 																											 
-#define __DEBUG_SINT                               /* - указываем что в системе utf-8 
-																											 для перерассчёта длины комментариев */
+#define __DEBUG_SINT                               /* - включаем вывод отладки синт. анализатора */
 																											 
-#define _DEBUG_LEX                                /* - указываем что в системе utf-8 
-																											 для перерассчёта длины комментариев */
+#define _DEBUG_LEX                                /* - включаем вывод лексич. анализатора */
+
+typedef unsigned char uc;
 
 /*
 ***** Б а з а  данных компилятора
@@ -58,7 +58,7 @@ char PREDSYM = ' ';                               /*последний обра�
 char STROKA [ NSTROKA ];                          /*место хранения уплотнен-*/
 						  /*ного исходного текста   */
 						  
-const unsigned char * COMMENT;                                /* текущий комментарий */
+unsigned char * COMMENT;                                /* текущий комментарий */
 
 int I,J,K,L;                                      /*текущие индексы соответ-*/
 						  /*ственно в:              */
@@ -83,6 +83,7 @@ union                                             /*шаблон для гене
     char COMM    [52];
    } _BUFCARD;
  } ASS_CARD ;
+
 
 char ASSTXT [ MAXLTXT ][80];                      /*массив для хранения     */
 						  /*выходного текста на     */
@@ -676,7 +677,6 @@ char TPR [ NVXOD ] [ NNETRM ] =
   };
 /*..........................................................................*/
 
-
 void printData(const char * hintText)
 {
   if (J >= 0 && I >= 0 && I < 200)
@@ -820,33 +820,31 @@ void mdst ( char* T1, int T2, int T3, int T4, int T5 )
 
 /*..........................................................................*/
 						  /* п р о г р а м м а      */
-int numb ( char* T1, int T2 )                     /* вычисления порядкового */
+int numb(char* T1, int T2)                     /* вычисления порядкового */
 						  /* номера строки в табл.  */
 						  /* VXOD, соответствующей  */
 						  /* строке-параметру функц.*/
- {
+{
   int k;
-
-  for ( I1 = 0; I1 < NVXOD; I1++ )
+  for (I1 = 0; I1 < NVXOD; I1++)
   {
     for ( k = 0; k < T2; k++ )
     {
-      if ( (*(T1+k) != VXOD [ I1 ].SYM [k] ) )
+      if ((*(T1+k) != VXOD[I1].SYM[k]))
         goto numb1;
     }
-  if ( (VXOD [ I1 ].SYM [k] == '\x0') ||
-       (VXOD [ I1 ].SYM [k] == ' '  )
-     )
-    return ( I1 );
+    if ((VXOD[I1].SYM[k] == '\0') ||
+        (VXOD[I1].SYM[k] == ' '))
+    return I1;
 numb1:
     continue;
-   }
+  }
   return -1;
- }
+}
 
 /*..........................................................................*/
 						  /*   п р о г р а м м а    */
-int sint_ANAL ()                                  /*   построения  дерева   */
+int sint_ANAL()                                  /*   построения  дерева   */
 						  /*синтаксического разбора,*/
 {                                                /*выполняющая роль синтак-*/
 						  /*сического анализатора   */
@@ -855,21 +853,20 @@ int sint_ANAL ()                                  /*   построения  д�
   L = 0;
   I = 0;
   J = 1;
-  mcel ( "PRO" , I , -1 );
-
-  if (!TPR [numb ( &STROKA [I], 1 )][numb ( "PRO", 3 )])
+  mcel ("PRO", I, -1);
+  if (!TPR[numb(&STROKA[I], 1)][numb("PRO", 3)])
     return 1;
 
 L2: //inter into graph
   #ifdef _DEBUG_SINT
   	printData("inter graph");
 #endif
-  J = VXOD [ numb ( &STROKA [ I ], 1 ) ].VX ;
+  J = VXOD[numb(&STROKA[I], 1)].VX;
 L3: //check term 1
 #ifdef _DEBUG_SINT
   	printData("inter check term 1");
 #endif
-  J = SINT [ J ].POSL;
+  J = SINT[J].POSL;
 L31: //check term 2
   #ifdef _DEBUG_SINT
   	printData("inter check term 2");
@@ -1004,60 +1001,283 @@ L10:
 
 /*..........................................................................*/
 
-struct                                            /* таблица имен меток и   */
- {                                                /* переменных, заполняемая*/
+struct SYM_t                                      /* таблица имен меток и   */
+{                                                /* переменных, заполняемая*/
   char NAME [8];                                  /* на первом проходе се-  */
   char TYPE;                                      /* мантического вычисления*/
   char RAZR [5];                                  /* и используемая на вто- */
   char INIT [50];                                 /* ром проходе семантичес-*/
- } SYM [ NSYM ];                                  /* кого вычисления        */
+} SYM[NSYM];                                  /* кого вычисления        */
 
 int ISYM = 0;                                     /* текущий индекс таблицы */
 						  /* имен                   */
 
-char NFIL [30]="\x0";                             /* хранилище имени транс- */
+char NFIL [30]="\0";                             /* хранилище имени транс- */
 						  /* лируемой программы     */
 
 /*..........................................................................*/
 
-long int BITVALUE ( char* s )                        /* п р о г р а м м а      */
+long int BITVALUE(char* s)                        /* п р о г р а м м а      */
 {                                                /* перевода двоичной      */
   long int S;                                     /* константы из ASCIIz-ви-*/
-  int i;                                          /* да во внутреннее пред- */
+                                            /* да во внутреннее пред- */
 						  /* ставление типа long int*/
-  i = 0;
   S = 0;
-  while ( *(s + i) != 'B' )
+  while (*s != 'B')
   {
     S <<= 1;
-    if ( *(s + i) == '1' )
-     S++;
-    i++;
+    if (*s == '1')
+      S++;
+    s++;
   }
   return (S);
 }
 
-long int DECVALUE ( char* s )                        /* п р о г р а м м а      */
+float BITVALUE_f(char* s)                        /* п р о г р а м м а      */
+{                                                /* перевода двоичной      */
+  float S;                                     /* константы из ASCIIz-ви-*/
+                                            /* да во внутреннее пред- */
+              /* ставление типа float*/
+  S = 0.f;
+  size_t strlen_s = strlen(s);
+  size_t point_pos = 0;
+  for (; point_pos < strlen_s && s[point_pos] != '.'; point_pos++);
+  size_t mantiss_len = point_pos + 1;
+  if (mantiss_len < strlen_s)
+    for (;mantiss_len < strlen_s && (s[mantiss_len] == '0' || s[mantiss_len] =='1' ); mantiss_len++);
+  float current_pow = 1.f;
+  for (int i = 1; point_pos >= i || mantiss_len > point_pos + i; i++, current_pow *= 2.f)
+  {
+    if (point_pos >= i) S += s[point_pos - i] * current_pow;
+    if (mantiss_len > point_pos + i) S += s[point_pos + i] * (1 / current_pow);
+  }
+  if (s[mantiss_len] == 'e')
+  {
+    // TODO add science float record support???
+  }
+  return (S);
+}
+
+long int DECVALUE(char* s)                        /* п р о г р а м м а      */
 {                                                /* перевода двоичной      */
   long int S;                                     /* константы из ASCIIz-ви-*/
-  int i;                                          /* да во внутреннее пред- */
+                                            /* да во внутреннее пред- */
 						  /* ставление типа long int*/
-  i = 0;
   S = 0;
-  while ( *(s + i) != '\0' ||  *(s + i) != ';')
+  while (*s != '\0' ||  *s != ';' || *s != ' ')
   {
     S *= 10;
-    S+= *(s + i) - '0';
-    i++;
+    S += *s - '0';
+    s++;
   }
   return (S);
 }
 
+// биты для определения типа
 
+const static uc FIXED_BIT =     0b1;
+const static uc FLOAT_BIT =    0b10;
+const static uc BIN_BIT =     0b100;
+const static uc DEC_BIT =    0b1000;
+const static uc LABEL_BIT = 0b10000;
+const static uc EQU_BIT =  0b100000;
+
+// структура для разбора объявления
+
+struct ODC_t {
+  char varname[10];
+  unsigned char type;
+  char bits[3];
+  char value[35]; // 32 бита, -, B, 0x00
+  unsigned char value_type;
+} splitted_ODC;
+
+struct dec_rab_var_t {
+  const struct SYM_t MRAB;
+  int sym_mrab;
+  const struct SYM_t MROP;
+  int sym_mrop;
+} dec_rab_var = {
+{"@MRAB", DEC_BIT, "8", "0"},
+  -1,
+{"@MROP", DEC_BIT, "8", "0"},
+  -1
+};
+
+void check_mrab_decl()
+{
+  if (dec_rab_var.sym_mrab == -1)
+  {
+    memcpy(&(SYM[ISYM]), &dec_rab_var.MRAB, sizeof(struct SYM_t));
+    dec_rab_var.sym_mrab = ISYM;
+    ISYM++;
+  }
+}
+
+void check_mrop_decl()
+{
+  if (dec_rab_var.sym_mrop == -1)
+  {
+    memcpy(&(SYM[ISYM]), &dec_rab_var.MROP, sizeof(struct SYM_t));
+    dec_rab_var.sym_mrop = ISYM;
+    ISYM++;
+  }
+}
+
+/* no mem alloc return dest pointer if success, else NULL */
+char * strcpy_next_word(char * dest, size_t dest_size, char * src)
+{
+  if (dest == NULL || src == NULL) return NULL;
+  int i = 0;
+  while ((*src < '0' || *src > '9') && // если src начинается не с цифры или буквы
+         (*src < 'A' || *src > 'Z') && // ищем букву или цифру
+         (*src < 'a' || *src > 'z') && *src != '\0' && *src != ';') src++;
+  int strlen_src = strlen(src);
+  if (*src == '\0' || *src == ';') return NULL;
+  for (; i < dest_size && i <= strlen_src && ((src[i] >= '0' && src[i] <= '9') ||
+                                              (src[i] >= 'A' && src[i] <= 'Z') ||
+                                              (src[i] >= 'a' && src[i] <= 'z')) ; i++);
+  if (i == dest_size) return NULL;
+  char tmp = src[i];
+  src[i] = '\0';
+  strcpy(dest, src);
+  src[i] = tmp;
+  return dest;
+}
+
+int split_ODC()
+{
+  unsigned char stage = 0;
+  int j = DST[I2].DST2;
+  unsigned char delims = 0;
+  //fprintf(stderr, &(STROKA[j]));
+  for (; j <= DST [I2].DST4+1 && stage < 11; j++)
+  {
+    if (STROKA[j] == ' ' || STROKA[j] == '(' || STROKA[j] == ')' || STROKA[j] == ';')
+    {
+      if (delims)
+        continue;
+      else
+      {
+        stage++;
+        delims = 1;
+        continue;
+      }
+    }
+    delims = 0;
+    switch (stage)
+    {
+    case 0: // "DCL" skip it
+    case 2: // while not end of varname
+    case 4: // while not end of type
+    case 6: // while not end of subtype
+    case 8: // while not end of bits
+    case 9: // "init" skip it
+      continue;
+    case 1: //varname
+      if (!strcpy_next_word(splitted_ODC.varname, 10, &(STROKA[j]))) goto parsingError;
+      stage++;
+      break;
+    case 3: // type BIN or DEC
+      if (!strcpy_next_word(splitted_ODC.value, 35, &(STROKA[j]))) goto parsingError;
+      splitted_ODC.type = 0;
+      if (!strcmp(splitted_ODC.value, "BIN")) splitted_ODC.type |= BIN_BIT;
+      else if (!strcmp(splitted_ODC.value, "DEC")) splitted_ODC.type |= DEC_BIT;
+      else goto typeError;
+      stage++;
+      break;
+    case 5: // subtype FLOAT or FIXED
+      if (!strcpy_next_word(splitted_ODC.value, 35, &(STROKA[j]))) goto parsingError;
+      if (!strcmp(splitted_ODC.value, "FIXED")) splitted_ODC.type |= FIXED_BIT;
+      else if (!strcmp(splitted_ODC.value, "FLOAT")) splitted_ODC.type |= FLOAT_BIT;
+      else goto typeError;
+      stage++;
+      break;
+    case 7: // razryad of variable
+      splitted_ODC.bits[0] = '\0';
+      if (STROKA[j] < '0' || STROKA[j] > '9') // check not number
+      {
+        j--;
+        stage+=2;
+        continue;
+      }
+      int razryad = 0;
+      for (; STROKA[j + razryad] >= '0' && STROKA[j + razryad] <= '9'; razryad++);
+      if (splitted_ODC.type & BIN_BIT)
+      {
+        if (razryad > 2) goto razryadOverflow;
+        if (razryad == 2) razryad = (STROKA[j++] - '0') * 10;
+        razryad += STROKA[j] - '0';
+        if (razryad > 31) goto razryadOverflow;
+        splitted_ODC.bits[0] = '0' + razryad / 10;
+        splitted_ODC.bits[1] = '0' + razryad % 10;
+        splitted_ODC.bits[2] = '\0';
+      }
+      else
+      {
+        if (razryad > 1 || STROKA[j] > '8') goto razryadOverflow;
+        splitted_ODC.bits[0] = STROKA[j];
+        splitted_ODC.bits[1] = '\0';
+      }
+      stage++;
+      break;
+    case 10:
+      if (!strcpy_next_word(splitted_ODC.value, 35, &(STROKA[j]))) goto parsingError;
+      splitted_ODC.value_type = 0;
+      for (int i = 0; i < strlen(splitted_ODC.value); i++)
+      {
+        if (splitted_ODC.value[i] == '.') splitted_ODC.value_type |= FLOAT_BIT;
+      }
+      if ((!splitted_ODC.type) & splitted_ODC.value_type) goto typeMismatch;; // check float init for fixed var
+      if (!splitted_ODC.value_type) splitted_ODC.value_type |= FIXED_BIT;
+      if (splitted_ODC.value[strlen(splitted_ODC.value) - 1] == 'B') splitted_ODC.value_type |= BIN_BIT;
+      else splitted_ODC.value_type |= DEC_BIT;
+      stage++;
+    }
+  }
+  if (stage < 11)
+  {
+    splitted_ODC.value_type = splitted_ODC.type;
+    splitted_ODC.value[0] = '0';
+    if (splitted_ODC.value_type & BIN_BIT)
+    {
+      splitted_ODC.value[1] = 'B';
+      splitted_ODC.value[2] = '\0';
+    }
+    else
+    {
+      splitted_ODC.value[1] = '\0';
+    }
+  }
+  if (splitted_ODC.bits[0] == '\0')
+  {
+    if (splitted_ODC.type & BIN_BIT)
+      strcpy(splitted_ODC.bits, "15");
+    else
+      strcpy(splitted_ODC.bits, "3");
+  }
+  return 0;
+parsingError:
+  STROKA[j + 20] = '\0';
+  printf("error parsing in \"%s\"", &(STROKA[j]));
+  return -1;
+typeError:
+  STROKA[j + 20] = '\0';
+  printf("bad type \"%s\"", &(STROKA[j]));
+  return -2;
+razryadOverflow:
+  STROKA[j + 20] = '\0';
+  printf("error razryad must be less then 33 \"%s\"", &(STROKA[j]));
+  return -4;
+typeMismatch:
+  STROKA[j + 20] = '\0';
+  printf("type mismatch - init fixed var with float value \"%s\"", &(STROKA[j]));
+  return -5;
+}
 
 /*..........................................................................*/
 void FORM ()                                      /* п р о г р а м м а      */
- {                                                /* представления фрагмента*/
+{                                                /* представления фрагмента*/
 						  /* плотного текста в виде */
 						  /* массива 9-ти символьных*/
 						  /* лексем                 */
@@ -1072,40 +1292,66 @@ void FORM ()                                      /* п р о г р а м м а 
 FORM1:
 
   for ( i = j; i <= DST [I2].DST4+1; i++ )
-   {
-     if ( STROKA [i] == ':' || STROKA [i] == ' ' ||
-	  STROKA [i] == '(' || STROKA [i] == ')' ||
-	  STROKA [i] == ';' || STROKA [i] == '+' ||
-	  STROKA [i] == '-' || STROKA [i] == '=' ||
-	  STROKA [i] == '*'
-	)
-	{
-	 FORMT [IFORMT] [i-j] = '\x0';
-	 IFORMT ++;
-	 j = i+1;
-	 goto FORM1;
-	}
-     else
-	 FORMT [IFORMT][i-j] = STROKA [i];
-
-   }
+  {
+    if (STROKA [i] == ':' || STROKA [i] == ' ' ||
+        STROKA [i] == '(' || STROKA [i] == ')' ||
+        STROKA [i] == ';' || STROKA [i] == '+' ||
+        STROKA [i] == '-' || STROKA [i] == '=' ||
+        STROKA [i] == '*')
+    {
+      FORMT [IFORMT] [i-j] = '\x0';
+      IFORMT ++;
+      j = i+1;
+      goto FORM1;
+    }
+    else
+      FORMT [IFORMT][i-j] = STROKA [i];
+  }
 
   return;
- }
+}
+
+unsigned char LAST_OPA_TYPE = 0;
+unsigned char LAST_OPA_RAZR[3] = "\0";
 
 /*..........................................................................*/
+/* программа рассчёта длины выводимой строки
+   в т.ч. при использовании UTF-8*/
+int COMM_LENGTH ()
+{
+  int n_all_symbols = 0;
+#ifdef UTF8
+  while (n_all_symbols < 50 && COMMENT[n_all_symbols] != '\0')
+  {
+    if (COMMENT[n_all_symbols] > 0x80) n_all_symbols++;
+    n_all_symbols++;
+  }
+  //if (n_all_symbols == ) return
+  return n_all_symbols;
+#else
+  n_all_symbols = strlen(COMMENT);
+  if (n_all_symbols > 51)
+  {
+    return 51;
+  } else {
+    return n_all_symbols;
+  }
+#endif
+}
 						  /* п р о г р а м м а      */
 void ZKARD ()                                     /* записи очередной сгене-*/
  {                                                /* рированной записи вы-  */
 						  /* ходного файла в массив */
 						  /* ASSTXT                 */
   char i;
+  //copy comment
+  memcpy(ASS_CARD._BUFCARD.COMM, COMMENT, COMM_LENGTH());
   memcpy ( ASSTXT [ IASSTXT++ ],
 			   ASS_CARD.BUFCARD, 80 );
 
   for ( i = 0; i < 79; i++ )
-   ASS_CARD.BUFCARD [i] = ' ';
-   ASS_CARD.BUFCARD [79] = '\n';
+    ASS_CARD.BUFCARD [i] = ' ';
+  ASS_CARD.BUFCARD [79] = '\n';
   return;
  }
 
@@ -1214,53 +1460,38 @@ int MAN1 ()
 int ODC1 ()
  {
   int i;
-  FORM ();                                        /* форматирование ПЛ1-опе-*/
-						  /* ратора DCL             */
+  int split_result = split_ODC(); /* форматирование ПЛ1-оператора DCL */
+  if (split_result) return split_result;
 
   for ( i = 0; i < ISYM; i++ )                    /* если фиксируем повтор- */
    {                                              /* повторное объявление   */
-    if (  !strcmp ( SYM [i].NAME, FORMT [1] ) &&  /* второго терма оператора*/
-	  strlen ( SYM [i].NAME ) ==              /* DCL, то                */
-			     strlen ( FORMT [1] )
+    if (!strcmp(SYM[i].NAME, splitted_ODC.varname) &&  /* второго терма оператора*/
+    strlen(SYM[i].NAME) ==              /* DCL, то                */
+           strlen(splitted_ODC.varname)
        )
      return 6;                                    /* завершение программы   */
 						  /* по ошибке              */
    }
 
-  strcpy ( SYM [ISYM].NAME, FORMT [1] );          /* при отсутствии повтор- */
-  strcpy ( SYM [ISYM].RAZR, FORMT [4] );          /* ного объявления иденти-*/
+  strcpy(SYM[ISYM].NAME, splitted_ODC.varname);          /* при отсутствии повтор- */
+  strcpy(SYM[ISYM].RAZR, splitted_ODC.bits);          /* ного объявления иденти-*/
 						  /* фикатора запоминаем его*/
 						  /* вместе с разрядностью в*/
 						  /* табл.SYM               */
-
-  if ( !strcmp ( FORMT [2], "BIN" ) &&            /* если идентификатор оп- */
-		  !strcmp ( FORMT [3], "FIXED" ) )/* ределен как bin fixed, */
-   {
-    SYM [ISYM].TYPE = 'B';                        /* то устанавливаем тип   */
-						  /* идентификатора = 'B' и */
-    goto ODC11;                                   /* идем на продолжение об-*/
-						  /* работки, а             */
-   }
-  else                                            /* иначе                  */
-   {
-    SYM [ISYM].TYPE = 'U';                        /* устанавливаем тип иден-*/
-						  /* тификатора = 'U'  и    */
-    return 2;                                     /* завершаем программу    */
-						  /* по ошибке              */
-   }
-
-ODC11:                                            /* если идентификатор     */
-						  /* имеет начальную иници- */
-  if ( !strcmp ( FORMT [5], "INIT" )  )           /* ализацию, то запомина- */
-   strcpy ( SYM [ISYM++].INIT, FORMT [6] );       /* ем в табл. SYM это на- */
-						  /* чальное значение, а    */
-  else                                            /* иначе                  */
-   strcpy ( SYM [ISYM++].INIT, "0B" );            /* инициализируем иденти- */
-						  /* фикатор нулем          */
-
-   return 0;                                      /* успешное завешение     */
+  SYM[ISYM].TYPE = splitted_ODC.type;                        /* устанавливаем тип   */
+  if (splitted_ODC.value_type & DEC_BIT)
+    strcpy(SYM [ISYM].INIT,  splitted_ODC.value);
+  else
+  {
+    if (splitted_ODC.value_type & FIXED_BIT)
+      sprintf(SYM[ISYM].INIT, "%ld", BITVALUE(splitted_ODC.value));
+    else
+      sprintf(SYM[ISYM].INIT, "%f", BITVALUE_f(splitted_ODC.value));
+  }
+  ISYM++;
+  return 0;   /* успешное завешение     */
 						  /* программы              */
- }
+}
 
 /*..........................................................................*/
 
@@ -1272,23 +1503,19 @@ ODC11:                                            /* если идентифик
 int OEN1 ()
  {
   char i = 0;
-  FORM ();                                        /* форматирование ПЛ1-опе-*/
+  FORM();                                        /* форматирование ПЛ1-опе-*/
 						  /* ратора END             */
-
-  for ( i = 0; i < ISYM; i++ )                    /* если вторй терм опера- */
+  for (i = 0; i < ISYM; i++)                    /* если вторй терм опера- */
 						  /* тора END записан в табл*/
-   {                                              /* SYM и его тип = "P",то:*/
-    if ( !strcmp ( SYM [i].NAME, FORMT [1] ) &&
-		       (SYM [i].TYPE == 'P') &&
-		       strlen (SYM [i].NAME) ==
-			strlen ( FORMT [1] ) )
-     return 0;                                    /* успешное завершение    */
-						  /* программы              */
-   }
-
-  return 1;                                       /* иначе завершение прог- */
-						  /* раммы по ошибке        */
- }
+  {                                              /* SYM и его тип = "P",то:*/
+    if (!strcmp(SYM[i].NAME, FORMT [1]) &&
+        (SYM[i].TYPE == LABEL_BIT) &&
+        strlen(SYM [i].NAME) ==
+          strlen(FORMT[1]))
+     return 0;               /* успешное завершение программы               */
+  }
+  return 1;                  /* иначе завершение программы по ошибке        */
+}
 
 /*..........................................................................*/
 
@@ -1299,9 +1526,9 @@ int OEN1 ()
 						  /* OPA - "операт.присваи- */
 						  /* вания арифметический   */
 int OPA1 ()
- {
+{
   return 0;
- }
+}
 
 /*..........................................................................*/
 
@@ -1311,21 +1538,27 @@ int OPA1 ()
 						  /* вом проходе.   Здесь   */
 						  /* OPR - "операт.ПЛ1-PROC"*/
 int OPR1 ()
- {
-  FORM ();                                        /* форматируем оператор   */
-						  /* ПЛ1 PROC               */
-
+{
+  FORM ();                                 /* форматируем оператор ПЛ1 PROC */
   strcpy ( SYM [ISYM].NAME, FORMT [0] );          /* перепишем имя ПЛ1-прог-*/
-						  /* раммы в табл. SYM,     */
-
-  SYM [ISYM].TYPE   = 'P';                        /* установим тип этого    */
-						  /* имени = 'P'            */
-  SYM [ISYM++].RAZR [0] = '\x0';                  /* установим разрядность  */
-						  /* равной 0               */
-
-  return 0;                                       /* успешное завершение    */
-						  /* программы              */
- }
+                                                  /* раммы в табл. SYM,     */
+  SYM [ISYM].TYPE   = LABEL_BIT;        /* установим тип этого имени LABEL  */
+  SYM [ISYM++].RAZR [0] = '\x0';          /* установим разрядность равной 0 */
+  // add base EQU register names
+  strcpy(SYM[ISYM].NAME, "@RBAS");
+  SYM[ISYM].TYPE = EQU_BIT;
+  SYM[ISYM].RAZR[0] = '\0';
+  strcpy(SYM[ISYM++].INIT, "12");
+  strcpy(SYM[ISYM].NAME, "@RVIX");
+  SYM[ISYM].TYPE = EQU_BIT;
+  SYM[ISYM].RAZR[0] = '\0';
+  strcpy(SYM[ISYM++].INIT, "14");
+  strcpy(SYM[ISYM].NAME, "@RRAB");
+  SYM[ISYM].TYPE = EQU_BIT;
+  SYM[ISYM].RAZR[0] = '\0';
+  strcpy(SYM[ISYM++].INIT, "2");
+  return 0;                                /* успешное завершение программы */
+}
 
 /*..........................................................................*/
 
@@ -1336,9 +1569,9 @@ int OPR1 ()
 						  /* PRO - "программа"      */
 
 int PRO1 ()
- {
+{
   return 0;
- }
+}
 
 /*..........................................................................*/
 
@@ -1380,177 +1613,847 @@ int ZNK1 ()
  }
  
 /*..........................................................................*/
-							/* программа рассчёта длины выводимой строки
-								 в т.ч. при использовании UTF-8*/
-int COMM_LENGTH ()
-{
-	int n_all_symbols = 0;
-#ifdef UTF8
-	while (n_all_symbols < 50 && COMMENT[n_all_symbols] != '\0')
-	{
-		if (COMMENT[n_all_symbols] > 0x80) n_all_symbols++;
-		n_all_symbols++;
-	}
-	//if (n_all_symbols == ) return 
-	return n_all_symbols;
-#else
-	n_all_symbols = strlen(COMMENT);
-	if (n_all_symbols > 51)
-	{
-		return 51;
-	} else {
-		return n_all_symbols;
-	}
-#endif
-}
+
 
 /*..........................................................................*/
 
-						  /* п р о г р а м м а      */
-						  /* семантич. вычисления   */
-						  /* нетерминала AVI на вто-*/
-						  /* ром проходе.   Здесь   */
-						  /* AVI -   "арифм.выраж." */
+int check_sym_exists(char * candidate)
+{
+  for (int i = 0; i < ISYM; i++)
+  {
+    if (!strcmp(SYM[i].NAME, candidate)) return i;
+  }
+  return -1;
+}
 
+int is_bools_declared = 0;
+void declare_bools()
+{
+  if (is_bools_declared) return;
+  strcpy(SYM[ISYM].NAME, "@TRUE");
+  strcpy(SYM[ISYM].RAZR, "1");
+  strcpy(SYM[ISYM].INIT, "1");
+  SYM[ISYM++].TYPE = BIN_BIT | FIXED_BIT;
+  strcpy(SYM[ISYM].NAME, "@FALS");
+  strcpy(SYM[ISYM].RAZR, "1");
+  strcpy(SYM[ISYM].INIT, "0");
+  SYM[ISYM++].TYPE = BIN_BIT | FIXED_BIT;
+  is_bools_declared = 1;
+}
 
+int rrop_exists = 0;
+void check_rrop()
+{
+  if (rrop_exists) return;
+  strcpy(SYM[ISYM].NAME, "@RROP");
+  SYM[ISYM].TYPE = EQU_BIT;
+  SYM[ISYM].RAZR[0] = '\0';
+  strcpy(SYM[ISYM++].INIT, "3");
+}
+
+// return 0 if priority of right op is not greater, else return 1
+int check_priority(int begin)
+{
+  int i = begin;
+  // go this operation
+  for (; STROKA[i] != '\0' && STROKA[i] != '*' && STROKA[i] != '/' && STROKA[i] != ';' &&
+         STROKA[i] != ')' && STROKA[i] != '+' && STROKA[i] != '-' && STROKA[i] != '='; i++);
+  if (STROKA[i] == ')' || STROKA[i] == ';' || STROKA[i] == '\0') return 0;
+  if (STROKA[i + 1] == '(') return 1;
+  if (STROKA[i] == '*' || STROKA[i] == '/') return 0;
+  // check second operation or end
+  i++;
+  for (; STROKA[i] != '\0' && STROKA[i] != '*' && STROKA[i] != '/' && STROKA[i] != ';' &&
+         STROKA[i] != ')' && STROKA[i] != '+' && STROKA[i] != '-'; i++);
+  if (STROKA[i] == ')' || STROKA[i] == '+' || STROKA[i] == '-' ||
+      STROKA[i] == '\0' || STROKA[i] == ';') return 0;
+  return 1;
+}
+
+int next_not_letter_or_number(int begin)
+{
+  int i = begin;
+  for (;(STROKA[i] >= '0' && STROKA[i] <= '9') ||
+        (STROKA[i] >= 'a' && STROKA[i] <= 'z') ||
+        (STROKA[i] >= 'A' && STROKA[i] <= 'Z'); i++);
+  return i;
+}
+
+int next_operand(int current_operand)
+{
+  int i = current_operand;
+  for (;(STROKA[i] >= '0' && STROKA[i] <= '9') || // go to end this operand
+        (STROKA[i] >= 'a' && STROKA[i] <= 'z') ||
+        (STROKA[i] >= 'A' && STROKA[i] <= 'Z'); i++);
+  // while not next or not end of AVI
+  while (STROKA[i] != '\0' && STROKA[i] != ';' && ((STROKA[i] < '0' || STROKA[i] > '9') &&
+                                                   (STROKA[i] < 'a' || STROKA[i] > 'z') &&
+                                                   (STROKA[i] < 'A' || STROKA[i] > 'Z'))
+         && STROKA[i] != '(') i++;
+  return i;
+}
+
+void conv_from_dec_fixed_to_bin_fixed(struct SYM_t var, char * reg)
+{
+  check_mrab_decl();
+  //MVC @MRAB+n(m),var
+  memcpy(ASS_CARD._BUFCARD.OPERAC, "MVC", 3);
+  strcpy(ASS_CARD._BUFCARD.OPERAND, "@MRAB");//+5(3),B
+  if (SYM[dec_rab_var.sym_mrab].RAZR[0] != '8')
+  {
+    char str[50];
+    char fmt[] = "+%c(%c)";
+    sprintf(str, fmt, '0' + '8' - SYM[dec_rab_var.sym_mrab].RAZR[0],
+      SYM[dec_rab_var.sym_mrab].RAZR[0]);
+    strcat(ASS_CARD._BUFCARD.OPERAND, str);
+  }
+  strcat(ASS_CARD._BUFCARD.OPERAND, ",");
+  strcat(ASS_CARD._BUFCARD.OPERAND, var.NAME);
+  ASS_CARD._BUFCARD.OPERAND[strlen(ASS_CARD._BUFCARD.OPERAND)] = ' ';
+  COMMENT = "Загрузка dec в память со смещением";
+  ZKARD();
+  // CVB  reg,@MRAB
+  memcpy(ASS_CARD._BUFCARD.OPERAC, "CVB", 3);
+  strcpy(ASS_CARD._BUFCARD.OPERAND, reg);
+  strcat(ASS_CARD._BUFCARD.OPERAND, ",@MRAB");
+  COMMENT = "преобр из dec в bin c загрузкой в reg";
+  ASS_CARD._BUFCARD.OPERAND[strlen(ASS_CARD._BUFCARD.OPERAND)] = ' ';
+  ZKARD();
+}
+
+int subAVI(int begin, uc expected_type, const char * expected_razr)
+{
+  int curpos = begin;
+  uc left_operand_is_single_term = 1;
+  if (STROKA[curpos] != '(')
+  {
+    STROKA[curpos + 20] = '\0';
+    fprintf(stderr, "bad subAVI begin, expected \'(\', founded \"%s\"", STROKA[curpos]);
+    return -8;
+  }
+  curpos++;
+  int NOSH = 0;
+parse_avi:
+  if (check_priority(curpos))
+  {
+    if (left_operand_is_single_term)
+    {
+      left_operand_is_single_term = 0;
+      char left_operand[6] = "\0";
+      if (!strcpy_next_word(left_operand, 6, &STROKA[curpos]))
+      {
+        STROKA[curpos + 20] = '\0';
+        fprintf(stderr, "parse operand error \"%s\"", &(STROKA[curpos]));
+        return -6;
+      }
+      for (int i = 0; i < ISYM; i++)     /* ищем этот терм в таблице имён */
+      {
+        if (!strcmp(SYM[i].NAME, left_operand))
+        {
+          // result of subexpr stored in @RRVAL, if expected_type is bin fixed or in
+          // in memory @MOPD if FIXED DEC
+          int next_pos = subAVI(next_operand(curpos), expected_type, expected_razr);
+          // load left operand
+          if ((expected_type & (BIN_BIT | FIXED_BIT)) == (BIN_BIT | FIXED_BIT)) /* в случае типа bin fixed*/
+          {
+            if ((SYM[i].TYPE & (BIN_BIT | FIXED_BIT)) == (BIN_BIT | FIXED_BIT))
+            {
+              /* формируем код ассемблеровской операции LOAD */
+              int is_half = strcmp(SYM[i].RAZR, "15") <= 0;
+              ASS_CARD._BUFCARD.OPERAC[0] = 'L';
+              /* а при разрядности > 15 формируем код ассемблера */
+              if (is_half)         /* разрядность <= 15    */
+                ASS_CARD._BUFCARD.OPERAC[1] = 'H';
+              strcpy(ASS_CARD._BUFCARD.OPERAND, "@RRAB,");
+              strcat(ASS_CARD._BUFCARD.OPERAND, left_operand);
+              /* формируем первый и второй операнды ассемблеровской операции */
+              ASS_CARD._BUFCARD.OPERAND[strlen    /* вставляем разделитель  */
+                (ASS_CARD._BUFCARD.OPERAND)] = ' ';
+              COMMENT = "Загрузка переменной в регистр";
+              ZKARD();
+            }
+            else //type mismatch
+            {
+              conv_from_dec_fixed_to_bin_fixed(SYM[i], "@RRAB");
+            }
+            int next_symbol = next_not_letter_or_number(curpos);
+            // useless
+            if (next_pos == next_symbol)
+              return 0;
+            switch(STROKA[next_symbol])
+            {
+              case '+':
+              {
+                ASS_CARD._BUFCARD.OPERAC[0] = 'A';
+                COMMENT = "сложение";
+                break;
+              }
+              case '-':
+              {
+                ASS_CARD._BUFCARD.OPERAC[0] = 'S';
+                COMMENT = "вычитание";
+                break;
+              }
+              case '*':
+              {
+                ASS_CARD._BUFCARD.OPERAC[0] = 'M';
+                COMMENT = "умножение";
+                break;
+              }
+              case '/':
+              {
+                ASS_CARD._BUFCARD.OPERAC[0] = 'D';
+                COMMENT = "деление";
+                break;
+              }
+              case '=':
+              {
+                char load[3] = "LH";
+                declare_bools();
+                //CR
+                memcpy(ASS_CARD._BUFCARD.OPERAC, "CR", 2);
+                strcpy(ASS_CARD._BUFCARD.OPERAND,"@RRAB,@RROP");
+                ASS_CARD._BUFCARD.OPERAND[strlen(ASS_CARD._BUFCARD.OPERAND)] = ' ';
+                ZKARD();
+                //BC
+                memcpy(ASS_CARD._BUFCARD.OPERAC, "BC", 2);
+                strcpy(ASS_CARD._BUFCARD.OPERAND, "8,*+6");
+                ASS_CARD._BUFCARD.OPERAND[strlen(ASS_CARD._BUFCARD.OPERAND)] = ' ';
+                ZKARD();
+                //LH                  @RRAB,@FALS
+                memcpy(ASS_CARD._BUFCARD.OPERAC, load, 2);
+                strcpy(ASS_CARD._BUFCARD.OPERAND, "@RRAB,@FALS");
+                ASS_CARD._BUFCARD.OPERAND[strlen(ASS_CARD._BUFCARD.OPERAND)] = ' ';
+                ZKARD();
+                //BC                  15,*+4
+                memcpy(ASS_CARD._BUFCARD.OPERAC, "BC", 2);
+                strcpy(ASS_CARD._BUFCARD.OPERAND, "15,*+4");
+                ASS_CARD._BUFCARD.OPERAND[strlen(ASS_CARD._BUFCARD.OPERAND)] = ' ';
+                ZKARD();
+                //LH                  @RRAB.@TRUE
+                memcpy(ASS_CARD._BUFCARD.OPERAC, load, 2);
+                strcpy(ASS_CARD._BUFCARD.OPERAND, "@RRAB.@TRUE");
+                ASS_CARD._BUFCARD.OPERAND[strlen(ASS_CARD._BUFCARD.OPERAND)] = ' ';
+                ZKARD();
+
+                // TODO support next bool AVI processing
+                return 0;
+              }
+            }
+            ASS_CARD._BUFCARD.OPERAC[1] = 'R'; // 2 reg operation
+            strcpy(ASS_CARD._BUFCARD.OPERAND,"@RRAB,@RROP");
+            ASS_CARD._BUFCARD.OPERAND[strlen(ASS_CARD._BUFCARD.OPERAND)] = ' ';
+            ZKARD();
+          }
+          else if ((expected_type & (DEC_BIT | FIXED_BIT)) == (DEC_BIT | FIXED_BIT)) /* в случае типа DEC fixed*/
+          {
+            // TODO conv from dec to bin
+            memcpy(ASS_CARD._BUFCARD.OPERAC, "MVC", 3);
+            strcpy(ASS_CARD._BUFCARD.OPERAND, "@MRAB");//+5(3),B
+            if (SYM[dec_rab_var.sym_mrab].RAZR[0] != '8')
+            {
+              char str[50];
+              char fmt[] = "+%c(%c)";
+              sprintf(str, fmt, '0' + '8' - SYM[dec_rab_var.sym_mrab].RAZR[0],
+                SYM[dec_rab_var.sym_mrab].RAZR[0]);
+              strcat(ASS_CARD._BUFCARD.OPERAND, str);
+            }
+            strcat(ASS_CARD._BUFCARD.OPERAND, ",");
+            strcat(ASS_CARD._BUFCARD.OPERAND, left_operand);
+            // заменяем конец строки пробелом
+            ASS_CARD._BUFCARD.OPERAND[strlen(ASS_CARD._BUFCARD.OPERAND)] = ' ';
+            COMMENT = "Загрузка FIX DEC в @DRAB";
+            memcpy(ASS_CARD._BUFCARD.COMM,      /* и построчный коментарий*/
+              COMMENT, COMM_LENGTH());
+            ZKARD();
+            int next_symbol = next_not_letter_or_number(curpos);
+            // useless
+            LAST_OPA_TYPE = DEC_BIT | FIXED_BIT;
+            strcpy(LAST_OPA_RAZR, SYM[i].RAZR);
+            if (next_pos == next_symbol)
+              return 0;
+            // TODO: decimal ariphmetic op processing
+          }
+          curpos = next_pos;
+          goto parse_avi;
+        }
+      }
+      fprintf(stderr, "variable not found \"%s\"");
+    }
+    else
+    {
+      fprintf(stderr, "for parsing such ariphmetic expression need realize stack for saving left operand");
+    }
+  }
+  else
+  {
+    if (left_operand_is_single_term) // single term left op
+    {
+      left_operand_is_single_term = 0;
+      char left_operand[6] = "\0";
+      if (!strcpy_next_word(left_operand, 6, &STROKA[curpos]))
+      {
+        STROKA[curpos + 20] = '\0';
+        fprintf(stderr, "parse operand error \"%s\"", &(STROKA[curpos]));
+        return -6;
+      }
+      for (int i = 0; i < ISYM; i++)     /* ищем этот терм в таблице имён */
+      {
+        if (!strcmp(SYM[i].NAME, left_operand))
+        {
+          // load left operand
+          if ((expected_type & (BIN_BIT | FIXED_BIT)) == (BIN_BIT | FIXED_BIT)) /* в случае типа bin fixed*/
+          {
+            if ((SYM[i].TYPE & (BIN_BIT | FIXED_BIT)) == (BIN_BIT | FIXED_BIT))
+            {
+              /* формируем код ассемблеровской операции LOAD */
+              int is_half = strcmp(SYM[i].RAZR, "15") <= 0;
+              ASS_CARD._BUFCARD.OPERAC[0] = 'L';
+              /* а при разрядности > 15 формируем код ассемблера */
+              if (is_half)         /* разрядность <= 15    */
+                ASS_CARD._BUFCARD.OPERAC[1] = 'H';
+              strcpy(ASS_CARD._BUFCARD.OPERAND, "@RRAB,");
+              strcat(ASS_CARD._BUFCARD.OPERAND, left_operand);
+              /* формируем первый и второй операнды ассемблеровской операции */
+              ASS_CARD._BUFCARD.OPERAND[strlen    /* вставляем разделитель  */
+                (ASS_CARD._BUFCARD.OPERAND)] = ' ';
+              COMMENT = "Загрузка переменной в регистр";
+              memcpy(ASS_CARD._BUFCARD.COMM,      /* и построчный коментарий*/
+                COMMENT, COMM_LENGTH());
+              ZKARD();
+            }
+            else //type mismatch
+            {
+              conv_from_dec_fixed_to_bin_fixed(SYM[i], "@RRAB");
+            }
+            curpos = next_not_letter_or_number(curpos);
+            if (STROKA[curpos] == ';')
+              return 0;
+          }
+          else if ((SYM[i].TYPE & (DEC_BIT | FIXED_BIT)) == (DEC_BIT | FIXED_BIT)) /* в случае типа DEC fixed*/
+          {
+            if (dec_rab_var.sym_mrab == -1)
+            {
+              memcpy(&(SYM[ISYM]), &dec_rab_var.MRAB, sizeof(struct SYM_t));
+              dec_rab_var.sym_mrab = ISYM;
+              ISYM++;
+            }
+            memcpy(ASS_CARD._BUFCARD.OPERAC, "MVC", 3);
+            strcpy(ASS_CARD._BUFCARD.OPERAND, "@DRAB");//+5(3),B
+            if (SYM[dec_rab_var.sym_mrab].RAZR[0] != '8')
+            {
+              char str[50];
+              char fmt[] = "+%c(%c)";
+              sprintf(str, fmt, '0' + '8' - SYM[dec_rab_var.sym_mrab].RAZR[0],
+                SYM[dec_rab_var.sym_mrab].RAZR[0]);
+              strcat(ASS_CARD._BUFCARD.OPERAND, str);
+            }
+            strcat(ASS_CARD._BUFCARD.OPERAND, ",");
+            strcat(ASS_CARD._BUFCARD.OPERAND, left_operand);
+            // заменяем конец строки пробелом
+            ASS_CARD._BUFCARD.OPERAND[strlen(ASS_CARD._BUFCARD.OPERAND)] = ' ';
+            COMMENT = "Загрузка FIX DEC в @DRAB";
+            memcpy(ASS_CARD._BUFCARD.COMM,      /* и построчный коментарий*/
+              COMMENT, COMM_LENGTH());
+            ZKARD();
+            curpos = next_not_letter_or_number(curpos);
+            // useless
+            LAST_OPA_TYPE = DEC_BIT | FIXED_BIT;
+            strcpy(LAST_OPA_RAZR, SYM[i].RAZR);
+            if (STROKA[curpos] == ';')
+              return 0;
+          }
+          break;
+        }
+      }
+    }
+    curpos = next_not_letter_or_number(curpos);
+    if (curpos == ';')
+      return 0;
+    char right_op[8] = "\0";
+    int with_conversation = 0;
+    strcpy_next_word(right_op, 8, &(STROKA[curpos]));
+    int right_index = check_sym_exists(right_op);
+    if (right_index == -1)
+    {
+      STROKA[curpos + 20] = '\0';
+      fprintf(stderr, "next variable not declared \"%s\"", &(STROKA[curpos]));
+      return -7;
+    }
+    if (SYM[right_index].TYPE != expected_type)
+    {
+      with_conversation = 1;
+      // TODO conversation
+    }
+    if (expected_type == (BIN_BIT | FIXED_BIT))
+    {
+      switch(STROKA[curpos])
+      {
+        case '+':
+        {
+          ASS_CARD._BUFCARD.OPERAC[0] = 'A';
+          COMMENT = "сложение";
+          break;
+        }
+        case '-':
+        {
+          ASS_CARD._BUFCARD.OPERAC[0] = 'S';
+          COMMENT = "вычитание";
+          break;
+        }
+        case '*':
+        {
+          ASS_CARD._BUFCARD.OPERAC[0] = 'M';
+          COMMENT = "умножение";
+          break;
+        }
+        case '/':
+        {
+          ASS_CARD._BUFCARD.OPERAC[0] = 'D';
+          COMMENT = "деление";
+          break;
+        }
+        case '=':
+        {
+          char load[3] = "LH";
+          declare_bools();
+          //CR
+          if (strcmp(LAST_OPA_RAZR, "15") <= 0)
+            memcpy(ASS_CARD._BUFCARD.OPERAC, "CH", 3);
+          else
+            memcpy(ASS_CARD._BUFCARD.OPERAC, "C", 2);
+          strcpy(ASS_CARD._BUFCARD.OPERAND,"@RRAB,");
+          if (with_conversation)
+            strcat(ASS_CARD._BUFCARD.OPERAND, "RROP");
+          else
+            strcat(ASS_CARD._BUFCARD.OPERAND, right_op);
+          ASS_CARD._BUFCARD.OPERAND[strlen(ASS_CARD._BUFCARD.OPERAND)] = ' ';
+          ZKARD();
+          //BC
+          memcpy(ASS_CARD._BUFCARD.OPERAC, "BC", 2);
+          strcpy(ASS_CARD._BUFCARD.OPERAND, "8,*+6");
+          ASS_CARD._BUFCARD.OPERAND[strlen(ASS_CARD._BUFCARD.OPERAND)] = ' ';
+          ZKARD();
+          //LH                  @RRAB,@FALS
+          memcpy(ASS_CARD._BUFCARD.OPERAC, load, 2);
+          strcpy(ASS_CARD._BUFCARD.OPERAND, "@RRAB,@FALS");
+          ASS_CARD._BUFCARD.OPERAND[strlen(ASS_CARD._BUFCARD.OPERAND)] = ' ';
+          ZKARD();
+          //BC                  15,*+4
+          memcpy(ASS_CARD._BUFCARD.OPERAC, "BC", 2);
+          strcpy(ASS_CARD._BUFCARD.OPERAND, "15,*+4");
+          ASS_CARD._BUFCARD.OPERAND[strlen(ASS_CARD._BUFCARD.OPERAND)] = ' ';
+          ZKARD();
+          //LH                  @RRAB.@TRUE
+          memcpy(ASS_CARD._BUFCARD.OPERAC, load, 2);
+          strcpy(ASS_CARD._BUFCARD.OPERAND, "@RRAB.@TRUE");
+          ASS_CARD._BUFCARD.OPERAND[strlen(ASS_CARD._BUFCARD.OPERAND)] = ' ';
+          LAST_OPA_TYPE = BIN_BIT | FIXED_BIT;
+          ZKARD();
+          // TODO support next bool AVI processing
+          return 0;
+        }
+      }
+      if (with_conversation)
+        ASS_CARD._BUFCARD.OPERAC[1] = 'R'; // 2 reg operation
+      else if (strcmp(LAST_OPA_RAZR, "15") <= 0)
+        ASS_CARD._BUFCARD.OPERAC[1] = 'H'; // h operation
+      strcpy(ASS_CARD._BUFCARD.OPERAND,"@RRAB,");
+      if (with_conversation)
+        strcat(ASS_CARD._BUFCARD.OPERAND, "@RROP");
+      else
+        strcat(ASS_CARD._BUFCARD.OPERAND, right_op);
+      ASS_CARD._BUFCARD.OPERAND[strlen(ASS_CARD._BUFCARD.OPERAND)] = ' ';
+      ZKARD();
+    }
+    else if ((expected_type & (DEC_BIT | FIXED_BIT)) == (DEC_BIT | FIXED_BIT)) /* в случае типа DEC fixed*/
+    {
+      // TODO DECIMAL OPERATION PROCESSING
+    }
+  }
+  if (expected_type & BIN_BIT)
+  {
+    check_rrop();
+    memcpy(ASS_CARD._BUFCARD.OPERAC, "LR", 2);
+    strcpy(ASS_CARD._BUFCARD.OPERAND, "@RROP,@RRAB");
+    COMMENT = "перемещение результата RR";
+    ASS_CARD._BUFCARD.OPERAND[strlen(ASS_CARD._BUFCARD.OPERAND)] = ' ';
+    ZKARD();
+  }
+  else if (expected_type & DEC_BIT)
+  {
+    // TODO copying dec from MRAB to MROP
+  }
+  return curpos;
+}
+
+              /* п р о г р а м м а      */
+              /* семантич. вычисления   */
+      /* нетерминала AVI на втором проходе. Здесь */
+              /* AVI -   "арифм.выраж." */
 int AVI2 ()
- {
+{
   char i;
-  FORM ();                                        /*форматируем правую часть*/
-						  /*арифметического ПЛ1-опе-*/
-						  /*ратора присваивания     */
-
-  if ( IFORMT == 1 )                              /* если правая часть одно-*/
-     {                                            /* термовая, то:          */
-    for ( i = 0; i < ISYM; i++ )                  /* ищем этот терм в табли-*/
-     {                                            /* це имен  и             */
-      if ( !strcmp ( SYM [i].NAME, FORMT [0] )  &&/* если находим, то:      */
-	   strlen ( SYM [i].NAME ) ==
-			      strlen ( FORMT [0] )
-	 )
-       {
-	  if ( SYM [i].TYPE == 'B' )              /* в случае типа=bin fixed*/
-	   {
-
-	    if ( strcmp ( SYM [i].RAZR, "15" )    /* и разрядности <= 15    */
-					     <= 0 )
-	     memcpy ( ASS_CARD._BUFCARD.OPERAC,   /* формируем код ассембле-*/
-					"LH", 2 );/* ровской операции LH,   */
-	    else
-	     memcpy ( ASS_CARD._BUFCARD.OPERAC,   /* а при разрядности >15  */
-					 "L", 1 );/* формируем код ассембле-*/
-						  /* ровской операции L     */
-
-	    strcpy ( ASS_CARD._BUFCARD.OPERAND,   /*       формируем        */
-					"RRAB," );/*       первый  и        */
-	    strcat ( ASS_CARD._BUFCARD.OPERAND,   /* второй операнды ассемб-*/
-				       FORMT [0]);/* леровской операции     */
-
-	    ASS_CARD._BUFCARD.OPERAND [ strlen    /* вставляем разделитель  */
-	     ( ASS_CARD._BUFCARD.OPERAND ) ] = ' ';
-			COMMENT = "Загрузка переменной в регистр";
-	    memcpy ( ASS_CARD._BUFCARD.COMM,      /* и построчный коментарий*/
-	     COMMENT, COMM_LENGTH () );
-
-	    ZKARD ();                             /* запомнить операцию ас- */
-						  /* семблера  и            */
-	    return 0;                             /* завершить программу    */
-	   }
-	  else
-	   return 3;                              /* если тип терма не bin  */
-						  /* fixed,то выход по ошиб-*/
-						  /* ке                     */
-       }
-     }
-    return 4;                                     /* если терм-идентификатор*/
-						  /* неопределен, то выход  */
-						  /* по ошибке              */
-   }
-  else                                            /* если правая часть ариф-*/
-						  /* метического выражения  */
-						  /* двухтермовая, то:      */
-   {
-    for ( i = 0; i < ISYM; i++ )                  /* если правый терм ариф- */
-     {                                            /* метического выражения  */
-      if ( !strcmp ( SYM [i].NAME,                /*определен в табл.SYM,то:*/
-			    FORMT [IFORMT-1] )  &&
-	   strlen ( SYM [i].NAME ) ==
-		       strlen ( FORMT [IFORMT-1] )
-	 )
-       {
-	  if ( SYM [i].TYPE == 'B' )              /* если тип правого опе-  */
-	   {                                      /* ранда bin fixed, то:   */
-
-	    if ( STROKA [ DST [I2].DST4 -         /* если знак опер."+",то: */
-	     strlen( FORMT [IFORMT-1] ) ] == '+' )
-	     {
-	      if ( strcmp ( SYM [i].RAZR, "15" )  /* если разрядность прав. */
-					    <= 0 )/* операнда <= 15, то:    */
-	       memcpy ( ASS_CARD._BUFCARD.OPERAC,
-					"AH", 2 );/* формируем код ассембле-*/
-	      else                                /* ровской операции "AH",а*/
-	       memcpy ( ASS_CARD._BUFCARD.OPERAC,
-					 "A", 1 );/* иначе - "A"            */
-	     }
-
-	    else
-
-	     {
-	      if ( STROKA [ DST [I2].DST4 -       /* если же знак операции  */
-		 strlen ( FORMT [IFORMT-1] ) ] == /* арифметического выра-  */
-					     '-' )/* жения "-", то:         */
-
-	       {
-		if ( strcmp ( SYM [i].RAZR, "15" )/* при разрядности ариф-  */
-					    <= 0 )/* метич.выраж.<= 15      */
-		 memcpy( ASS_CARD._BUFCARD.OPERAC,/* формируем код ассембле-*/
-					"SH", 2 );/* ровской операции "SH",F*/
-		else
-		 memcpy( ASS_CARD._BUFCARD.OPERAC,/* иначе - "S"            */
-					 "S", 1 );
-	       }
-
-	      else
-
-	       return 5;                          /* если знак операции не  */
-						  /* "+" и не "-", то завер-*/
-						  /* шение  программы  по   */
-						  /* ошибке                 */
-	     }
-						  /* формируем:             */
-	    strcpy ( ASS_CARD._BUFCARD.OPERAND,   /* - первый операнд ассем-*/
-					"RRAB," );/*блеровской операции;    */
-	    strcat ( ASS_CARD._BUFCARD.OPERAND,   /* - второй операнд ассем-*/
-			       FORMT [IFORMT-1] );/*блеровской операции;    */
-	    ASS_CARD._BUFCARD.OPERAND [ strlen
-		  ( ASS_CARD._BUFCARD.OPERAND )] =/* - разделяющий пробел;  */
-					      ' ';
-			COMMENT = "Формирование промежуточного значения";
-	    memcpy ( ASS_CARD._BUFCARD.COMM,
-	    COMMENT,/* - построчный коментарий*/
-					     COMM_LENGTH ( ) );
-	    ZKARD ();                             /* запоминание ассембле-  */
-						  /* ровской операции       */
-
-	    return 0;                             /* успешное завершение    */
-						  /* пограммы               */
-	   }
-	  else
-	   return 3;                              /* если тип правого опе-  */
-						  /* ранда арифметического  */
-						  /* выражения не bin fixed,*/
-						  /* то завершение програм- */
-						  /* мы по ошибке           */
-       }
-     }
-    return 4;                                     /* если правый операнд    */
-						  /* арифметического выраже-*/
-						  /*ния не определен в табл.*/
-						  /* SYM, то завершить про- */
-						  /* грамму по ошибке       */
-   }
-
- }
+  // проверяем, что данное AVI часть OPA := IPE=AVI;
+  if (!strcmp(DST[I2+1].DST1, "OPA"))
+  {
+    uc left_operand_is_single_term = 1;
+    int curpos = DST[I2].DST2;
+    int NOSH = 0;
+parse_high_level_avi:
+    if (check_priority(curpos))
+    {
+      if (left_operand_is_single_term)
+      {
+        left_operand_is_single_term = 0;
+        char left_operand[6] = "\0";
+        if (!strcpy_next_word(left_operand, 6, &STROKA[curpos]))
+        {
+          STROKA[curpos + 20] = '\0';
+          fprintf(stderr, "parse operand error \"%s\"", &(STROKA[curpos]));
+          return -6;
+        }
+        for (i = 0; i < ISYM; i++)     /* ищем этот терм в таблице имён */
+        {
+          if (!strcmp(SYM[i].NAME, left_operand))
+          {
+            // result of subexpr stored in @RRVAL, if expected_type is bin fixed or in
+            // in memory @MOPD if FIXED DEC
+            int next_pos = subAVI(next_operand(curpos), SYM[i].TYPE, SYM[i].RAZR);
+            // load left operand
+            if ((SYM[i].TYPE & (BIN_BIT | FIXED_BIT)) == (BIN_BIT | FIXED_BIT)) /* в случае типа bin fixed*/
+            {
+              /* формируем код ассемблеровской операции LOAD */
+              int is_half = strcmp(SYM[i].RAZR, "15") <= 0;
+              ASS_CARD._BUFCARD.OPERAC[0] = 'L';
+              /* а при разрядности > 15 формируем код ассемблера */
+              if (is_half)         /* разрядность <= 15    */
+                ASS_CARD._BUFCARD.OPERAC[1] = 'H';
+              strcpy(ASS_CARD._BUFCARD.OPERAND, "@RRAB,");
+              strcat(ASS_CARD._BUFCARD.OPERAND, left_operand);
+              /* формируем первый и второй операнды ассемблеровской операции */
+              ASS_CARD._BUFCARD.OPERAND[strlen    /* вставляем разделитель  */
+                (ASS_CARD._BUFCARD.OPERAND)] = ' ';
+              COMMENT = "Загрузка переменной в регистр";
+              memcpy(ASS_CARD._BUFCARD.COMM,      /* и построчный коментарий*/
+                COMMENT, COMM_LENGTH());
+              ZKARD();
+              int next_symbol = next_not_letter_or_number(curpos);
+              // useless
+              LAST_OPA_TYPE = BIN_BIT | FIXED_BIT;
+              strcpy(LAST_OPA_RAZR, SYM[i].RAZR);
+              if (next_pos == next_symbol)
+                return 0;
+              switch(STROKA[next_symbol])
+              {
+                case '+':
+                {
+                  ASS_CARD._BUFCARD.OPERAC[0] = 'A';
+                  COMMENT = "сложение";
+                  break;
+                }
+                case '-':
+                {
+                  ASS_CARD._BUFCARD.OPERAC[0] = 'S';
+                  COMMENT = "вычитание";
+                  break;
+                }
+                case '*':
+                {
+                  ASS_CARD._BUFCARD.OPERAC[0] = 'M';
+                  COMMENT = "умножение";
+                  break;
+                }
+                case '/':
+                {
+                  ASS_CARD._BUFCARD.OPERAC[0] = 'D';
+                  COMMENT = "деление";
+                  break;
+                }
+                case '=':
+                {
+                  char load[3] = "LH";
+                  declare_bools();
+                  //CR
+                  memcpy(ASS_CARD._BUFCARD.OPERAC, "CR", 2);
+                  strcpy(ASS_CARD._BUFCARD.OPERAND,"@RRAB,@RROP");
+                  COMMENT = "сравнение знач в reg";
+                  ASS_CARD._BUFCARD.OPERAND[strlen(ASS_CARD._BUFCARD.OPERAND)] = ' ';
+                  ZKARD();
+                  //BC
+                  memcpy(ASS_CARD._BUFCARD.OPERAC, "BC", 2);
+                  strcpy(ASS_CARD._BUFCARD.OPERAND, "8,*+6");
+                  ASS_CARD._BUFCARD.OPERAND[strlen(ASS_CARD._BUFCARD.OPERAND)] = ' ';
+                  COMMENT = "if eq goto load true";
+                  ZKARD();
+                  //LH                  @RRAB,@FALS
+                  memcpy(ASS_CARD._BUFCARD.OPERAC, load, 2);
+                  strcpy(ASS_CARD._BUFCARD.OPERAND, "@RRAB,@FALS");
+                  ASS_CARD._BUFCARD.OPERAND[strlen(ASS_CARD._BUFCARD.OPERAND)] = ' ';
+                  COMMENT = "load false";
+                  ZKARD();
+                  //BC                  15,*+4
+                  memcpy(ASS_CARD._BUFCARD.OPERAC, "BC", 2);
+                  strcpy(ASS_CARD._BUFCARD.OPERAND, "15,*+4");
+                  ASS_CARD._BUFCARD.OPERAND[strlen(ASS_CARD._BUFCARD.OPERAND)] = ' ';
+                  COMMENT = "goto end of equal operator";
+                  ZKARD();
+                  //LH                  @RRAB.@TRUE
+                  memcpy(ASS_CARD._BUFCARD.OPERAC, load, 2);
+                  strcpy(ASS_CARD._BUFCARD.OPERAND, "@RRAB.@TRUE");
+                  ASS_CARD._BUFCARD.OPERAND[strlen(ASS_CARD._BUFCARD.OPERAND)] = ' ';
+                  COMMENT = "load true";
+                  ZKARD();
+                  LAST_OPA_TYPE = BIN_BIT | FIXED_BIT;
+                  // TODO support next bool AVI processing
+                  return 0;
+                }
+              }
+              ASS_CARD._BUFCARD.OPERAC[1] = 'R'; // 2 reg operationsr
+              strcpy(ASS_CARD._BUFCARD.OPERAND,"@RRAB,@RROP");
+              ASS_CARD._BUFCARD.OPERAND[strlen(ASS_CARD._BUFCARD.OPERAND)] = ' ';
+              ZKARD();
+            }
+            else if ((SYM[i].TYPE & (DEC_BIT | FIXED_BIT)) == (DEC_BIT | FIXED_BIT)) /* в случае типа DEC fixed*/
+            {
+              if (dec_rab_var.sym_mrab == -1)
+              {
+                memcpy(&(SYM[ISYM]), &dec_rab_var.MRAB, sizeof(struct SYM_t));
+                dec_rab_var.sym_mrab = ISYM;
+                ISYM++;
+              }
+              memcpy(ASS_CARD._BUFCARD.OPERAC, "MVC", 3);
+              strcpy(ASS_CARD._BUFCARD.OPERAND, "@DRAB");//+5(3),B
+              if (SYM[dec_rab_var.sym_mrab].RAZR[0] != '8')
+              {
+                char str[50];
+                char fmt[] = "+%c(%c)";
+                sprintf(str, fmt, '0' + '8' - SYM[dec_rab_var.sym_mrab].RAZR[0],
+                  SYM[dec_rab_var.sym_mrab].RAZR[0]);
+                strcat(ASS_CARD._BUFCARD.OPERAND, str);
+              }
+              strcat(ASS_CARD._BUFCARD.OPERAND, ",");
+              strcat(ASS_CARD._BUFCARD.OPERAND, left_operand);
+              // заменяем конец строки пробелом
+              ASS_CARD._BUFCARD.OPERAND[strlen(ASS_CARD._BUFCARD.OPERAND)] = ' ';
+              COMMENT = "Загрузка FIX DEC в @DRAB";
+              memcpy(ASS_CARD._BUFCARD.COMM,      /* и построчный коментарий*/
+                COMMENT, COMM_LENGTH());
+              ZKARD();
+              int next_symbol = next_not_letter_or_number(curpos);
+              // useless
+              LAST_OPA_TYPE = DEC_BIT | FIXED_BIT;
+              strcpy(LAST_OPA_RAZR, SYM[i].RAZR);
+              if (next_pos == next_symbol)
+                return 0;
+              // TODO: decimal ariphmetic op processing
+            }
+            curpos = next_pos;
+            goto parse_high_level_avi;
+          }
+        }
+        fprintf(stderr, "variable not found \"%s\"");
+      }
+      else
+      {
+        fprintf(stderr, "for parsing such ariphmetic expression need realize stack for saving left operand");
+      }
+    }
+    else
+    {
+      if (left_operand_is_single_term) // single term left op
+      {
+        left_operand_is_single_term = 0;
+        char left_operand[6] = "\0";
+        if (!strcpy_next_word(left_operand, 6, &STROKA[curpos]))
+        {
+          STROKA[curpos + 20] = '\0';
+          fprintf(stderr, "parse operand error \"%s\"", &(STROKA[curpos]));
+          return -6;
+        }
+        for (i = 0; i < ISYM; i++)     /* ищем этот терм в таблице имён */
+        {
+          if (!strcmp(SYM[i].NAME, left_operand))
+          {
+            // result of subexpr stored in @RRVAL, if expected_type is bin fixed or in
+            // in memory @MOPD if FIXED DEC
+            // load left operand
+            if ((SYM[i].TYPE & (BIN_BIT | FIXED_BIT)) == (BIN_BIT | FIXED_BIT)) /* в случае типа bin fixed*/
+            {
+              /* формируем код ассемблеровской операции LOAD */
+              int is_half = strcmp(SYM[i].RAZR, "15") <= 0;
+              ASS_CARD._BUFCARD.OPERAC[0] = 'L';
+              /* а при разрядности > 15 формируем код ассемблера */
+              if (is_half)         /* разрядность <= 15    */
+                ASS_CARD._BUFCARD.OPERAC[1] = 'H';
+              strcpy(ASS_CARD._BUFCARD.OPERAND, "@RRAB,");
+              strcat(ASS_CARD._BUFCARD.OPERAND, left_operand);
+              /* формируем первый и второй операнды ассемблеровской операции */
+              ASS_CARD._BUFCARD.OPERAND[strlen    /* вставляем разделитель  */
+                (ASS_CARD._BUFCARD.OPERAND)] = ' ';
+              COMMENT = "Загрузка переменной в регистр";
+              ZKARD();
+              curpos = next_not_letter_or_number(curpos);
+              // useless
+              LAST_OPA_TYPE = BIN_BIT | FIXED_BIT;
+              strcpy(LAST_OPA_RAZR, SYM[i].RAZR);
+              if (STROKA[curpos] == ';')
+                return 0;
+            }
+            else if ((SYM[i].TYPE & (DEC_BIT | FIXED_BIT)) == (DEC_BIT | FIXED_BIT)) /* в случае типа DEC fixed*/
+            {
+              if (dec_rab_var.sym_mrab == -1)
+              {
+                memcpy(&(SYM[ISYM]), &dec_rab_var.MRAB, sizeof(struct SYM_t));
+                dec_rab_var.sym_mrab = ISYM;
+                ISYM++;
+              }
+              memcpy(ASS_CARD._BUFCARD.OPERAC, "MVC", 3);
+              strcpy(ASS_CARD._BUFCARD.OPERAND, "@DRAB");//+5(3),B
+              if (SYM[dec_rab_var.sym_mrab].RAZR[0] != '8')
+              {
+                char str[50];
+                char fmt[] = "+%c(%c)";
+                sprintf(str, fmt, '0' + '8' - SYM[dec_rab_var.sym_mrab].RAZR[0],
+                  SYM[dec_rab_var.sym_mrab].RAZR[0]);
+                strcat(ASS_CARD._BUFCARD.OPERAND, str);
+              }
+              strcat(ASS_CARD._BUFCARD.OPERAND, ",");
+              strcat(ASS_CARD._BUFCARD.OPERAND, left_operand);
+              // заменяем конец строки пробелом
+              ASS_CARD._BUFCARD.OPERAND[strlen(ASS_CARD._BUFCARD.OPERAND)] = ' ';
+              COMMENT = "Загрузка FIX DEC в @DRAB";
+              memcpy(ASS_CARD._BUFCARD.COMM,      /* и построчный коментарий*/
+                COMMENT, COMM_LENGTH());
+              ZKARD();
+              curpos = next_not_letter_or_number(curpos);
+              // useless
+              LAST_OPA_TYPE = DEC_BIT | FIXED_BIT;
+              strcpy(LAST_OPA_RAZR, SYM[i].RAZR);
+              if (STROKA[curpos] == ';')
+                return 0;
+            }
+            break;
+          }
+        }
+      }
+      curpos = next_not_letter_or_number(curpos);
+      if (curpos == ';')
+        return 0;
+      char right_op[8] = "\0";
+      int with_conversation = 0;
+      strcpy_next_word(right_op, 8, &(STROKA[curpos]));
+      int right_index = check_sym_exists(right_op);
+      if (right_index == -1)
+      {
+        STROKA[curpos + 20] = '\0';
+        fprintf(stderr, "next variable not declared \"%s\"", &(STROKA[curpos]));
+        return -7;
+      }
+      if (SYM[right_index].TYPE != SYM[i].TYPE)
+      {
+        with_conversation = 1;
+        // TODO conversation
+      }
+      if (LAST_OPA_TYPE == (BIN_BIT | FIXED_BIT))
+      {
+        switch(STROKA[curpos])
+        {
+          case '+':
+          {
+            ASS_CARD._BUFCARD.OPERAC[0] = 'A';
+            COMMENT = "сложение";
+            break;
+          }
+          case '-':
+          {
+            ASS_CARD._BUFCARD.OPERAC[0] = 'S';
+            COMMENT = "вычитание";
+            break;
+          }
+          case '*':
+          {
+            ASS_CARD._BUFCARD.OPERAC[0] = 'M';
+            COMMENT = "умножение";
+            break;
+          }
+          case '/':
+          {
+            ASS_CARD._BUFCARD.OPERAC[0] = 'D';
+            COMMENT = "деление";
+            break;
+          }
+          case '=':
+          {
+            char load[3] = "LH";
+            declare_bools();
+            //CR
+            if (strcmp(LAST_OPA_RAZR, "15") <= 0)
+              memcpy(ASS_CARD._BUFCARD.OPERAC, "CH", 3);
+            else
+              memcpy(ASS_CARD._BUFCARD.OPERAC, "C", 2);
+            strcpy(ASS_CARD._BUFCARD.OPERAND,"@RRAB,");
+            if (with_conversation)
+              strcat(ASS_CARD._BUFCARD.OPERAND, "RROP");
+            else
+              strcat(ASS_CARD._BUFCARD.OPERAND, right_op);
+            ASS_CARD._BUFCARD.OPERAND[strlen(ASS_CARD._BUFCARD.OPERAND)] = ' ';
+            COMMENT = "Сравнение чисел";
+            ZKARD();
+            //BC
+            memcpy(ASS_CARD._BUFCARD.OPERAC, "BC", 2);
+            strcpy(ASS_CARD._BUFCARD.OPERAND, "8,*+6");
+            ASS_CARD._BUFCARD.OPERAND[strlen(ASS_CARD._BUFCARD.OPERAND)] = ' ';
+            COMMENT = "goto load TRUE if equals";
+            ZKARD();
+            //LH                  @RRAB,@FALS
+            memcpy(ASS_CARD._BUFCARD.OPERAC, load, 2);
+            strcpy(ASS_CARD._BUFCARD.OPERAND, "@RRAB,@FALS");
+            ASS_CARD._BUFCARD.OPERAND[strlen(ASS_CARD._BUFCARD.OPERAND)] = ' ';
+            COMMENT = "load false to result";
+            ZKARD();
+            //BC                  15,*+4
+            memcpy(ASS_CARD._BUFCARD.OPERAC, "BC", 2);
+            strcpy(ASS_CARD._BUFCARD.OPERAND, "15,*+4");
+            ASS_CARD._BUFCARD.OPERAND[strlen(ASS_CARD._BUFCARD.OPERAND)] = ' ';
+            COMMENT = "goto store result";
+            ZKARD();
+            //LH                  @RRAB.@TRUE
+            memcpy(ASS_CARD._BUFCARD.OPERAC, load, 2);
+            strcpy(ASS_CARD._BUFCARD.OPERAND, "@RRAB.@TRUE");
+            ASS_CARD._BUFCARD.OPERAND[strlen(ASS_CARD._BUFCARD.OPERAND)] = ' ';
+            LAST_OPA_TYPE = BIN_BIT | FIXED_BIT;
+            COMMENT = "load TRUE to result";
+            ZKARD();
+            // TODO support next bool AVI processing
+            return 0;
+          }
+        }
+        if (with_conversation)
+          ASS_CARD._BUFCARD.OPERAC[1] = 'R'; // 2 reg operation
+        else if (strcmp(LAST_OPA_RAZR, "15") <= 0)
+          ASS_CARD._BUFCARD.OPERAC[1] = 'H'; // h operation
+        strcpy(ASS_CARD._BUFCARD.OPERAND,"@RRAB,");
+        if (with_conversation)
+          strcat(ASS_CARD._BUFCARD.OPERAND, "@RROP");
+        else
+          strcat(ASS_CARD._BUFCARD.OPERAND, right_op);
+        ASS_CARD._BUFCARD.OPERAND[strlen(ASS_CARD._BUFCARD.OPERAND)] = ' ';
+        //COMMENT = "swap registers";
+        ZKARD();
+      }
+      else if ((SYM[i].TYPE & (DEC_BIT | FIXED_BIT)) == (DEC_BIT | FIXED_BIT)) /* в случае типа DEC fixed*/
+      {
+        // TODO DECIMAL OPERATION PROCESSING
+      }
+      curpos++;
+      curpos = next_not_letter_or_number(curpos);
+      if (STROKA[curpos] == ';') return 0;
+      goto parse_high_level_avi;
+    }
+  }
+  return 0;
+}
 
 /*..........................................................................*/
 
@@ -1561,9 +2464,9 @@ int AVI2 ()
 						  /* BUK -   "буква"        */
 
 int BUK2 ()
- {
+{
   return 0;
- }
+}
 
 /*..........................................................................*/
 
@@ -1574,9 +2477,9 @@ int BUK2 ()
 						  /* CIF -   "цифра"        */
 
 int CIF2 ()
- {
+{
   return 0;
- }
+}
 
 /*..........................................................................*/
 
@@ -1588,9 +2491,9 @@ int CIF2 ()
 						  /* IDE -   "идентификатор"*/
 
 int IDE2 ()
- {
+{
   return 0;
- }
+}
 
 
 /*..........................................................................*/
@@ -1602,9 +2505,9 @@ int IDE2 ()
 						  /* IPE - "имя переменной" */
 
 int IPE2 ()
- {
+{
   return 0;
- }
+}
 
 /*..........................................................................*/
 
@@ -1615,9 +2518,9 @@ int IPE2 ()
 						  /* IPR -   "имя программы" */
 
 int IPR2 ()
- {
+{
   return 0;
- }
+}
 
 /*..........................................................................*/
 
@@ -1628,9 +2531,9 @@ int IPR2 ()
 						  /* LIT -   "литерал"      */
 
 int LIT2 ()
- {
+{
   return 0;
- }
+}
 
 /*..........................................................................*/
 
@@ -1641,9 +2544,9 @@ int LIT2 ()
 						  /* MAN -   "мантисса"     */
 
 int MAN2 ()
- {
+{
   return 0;
- }
+}
 
 /*..........................................................................*/
 
@@ -1654,9 +2557,9 @@ int MAN2 ()
 						  /* ODC - "операт.ПЛ1- DCL"*/
 
 int ODC2 ()
- {
+{
   return 0;
- }
+}
 
 /*..........................................................................*/
 
@@ -1670,109 +2573,88 @@ int ODC2 ()
 						  /* эпилог ассемблеровского*/
 						  /* эквивалента ПЛ1-прог-  */
 						  /* раммы                  */
-int OEN2 ()
- {
-  char RAB [20];
+int OEN2()
+{
+  char RAB[20];
   char i = 0;
-  FORM ();                                        /* форматируем ПЛ1-опера- */
+  FORM();                                        /* форматируем ПЛ1-опера- */
 						  /* тор END                */
 
-  memcpy ( ASS_CARD._BUFCARD.OPERAC, "BCR", 3 );  /* формируем код безуслов-*/
+  memcpy(ASS_CARD._BUFCARD.OPERAC, "BCR", 3);  /* формируем код безуслов-*/
 						  /*ного возврата управления*/
 						  /* в вызывающую программу */
 
-  memcpy ( ASS_CARD._BUFCARD.OPERAND,"15,14", 5 );/* операнды команды и     */
+  memcpy(ASS_CARD._BUFCARD.OPERAND,"15,@RVIX", 8);/* операнды команды и     */
 
-	COMMENT = "Выход из программы";
-  memcpy ( ASS_CARD._BUFCARD.COMM,                /* поле построчного комен-*/
-		       COMMENT, COMM_LENGTH () );/* тария                  */
-
-  ZKARD ();                                       /* запомнить опреацию     */
+  COMMENT = "Выход из программы";
+  ZKARD();                                       /* запомнить опреацию     */
 						  /* Ассемблера             */
-
 						  /* далее идет блок форми- */
 						  /* рования декларативных  */
 						  /* псевдоопераций DC для  */
 						  /* каждого идентификатора,*/
 						  /* попавшего в табл.SYM   */
   for ( i = 0; i < ISYM; i++ )
-   {                                              /* если строка табл.SYM   */
-    if ( isalpha ( SYM [i].NAME [0] ) )           /* содержит идентификатор,*/
-						  /* т.е.начинается с буквы,*/
-     {                                            /* то:                    */
-      if ( SYM [i].TYPE == 'B' )                  /* если тип оператора bin */
-						  /* fixed, то:             */
-       {
-	strcpy ( ASS_CARD._BUFCARD.METKA,         /* пишем идентификатор в  */
-				  SYM [i].NAME ); /* поле метки псевдоопера-*/
-						  /* ции DC                 */
-	ASS_CARD._BUFCARD.METKA [ strlen
-	     ( ASS_CARD._BUFCARD.METKA ) ] = ' '; /* пишем разделитель полей*/
-
-	memcpy ( ASS_CARD._BUFCARD.OPERAC,        /* пишем код псевдоопера- */
-				       "DC", 2 ); /* ции DC                 */
-
-	if ( strcmp ( SYM [i].RAZR, "15" ) <= 0 ) /* формируем операнды псе-*/
-						  /* вдооперации DC         */
-	 strcpy ( ASS_CARD._BUFCARD.OPERAND,      /* для случая полуслова   */
-					 "H\'" );
-	else                                      /* или                    */
-
-	 strcpy ( ASS_CARD._BUFCARD.OPERAND,      /* для случая слова       */					 "F\'" );
-
-//Dos command
-//	strcat ( ASS_CARD._BUFCARD.OPERAND,       /* формируем цифровую     */
-//		 ltoa ( BITVALUE (SYM [i].INIT),     /* часть операнда псевдо- */
-//				 &RAB [0], 10) ); /* операции,              */
-//let's do that in Unix!
-	strcat(ASS_CARD._BUFCARD.OPERAND, gcvt(BITVALUE(SYM[i].INIT), 10, &RAB[0]));
-	ASS_CARD._BUFCARD.OPERAND [ strlen        /* замыкающий апостроф    */
-	 ( ASS_CARD._BUFCARD.OPERAND ) ] = '\'';  /*          и             */
-	COMMENT = "Определение переменной";
-	memcpy ( ASS_CARD._BUFCARD.COMM,          /* поле построчного комен-*/
-		 COMMENT, COMM_LENGTH () );  /* тария                  */
-
-	ZKARD ();                                 /* запомнить операцию     */
+  {                                              /* если строка табл.SYM   */
+    if (SYM[i].TYPE & (BIN_BIT | DEC_BIT))                  /* если это переменная */
+    {
+      if (!strcmp(SYM[i].NAME, "@MRAB") || !strcmp(SYM[i].NAME, "@MROP"))
+      {
+         /* выравнивание */
+        memcpy(ASS_CARD._BUFCARD.OPERAC, "DS", 2);
+        memcpy(ASS_CARD._BUFCARD.OPERAND, "0F", 2);
+        COMMENT = "выравнивание";
+        ZKARD();
+      }
+      strcpy(ASS_CARD._BUFCARD.METKA,         /* пишем идентификатор в  */
+      SYM[i].NAME);                     /* поле метки псевдооперации DC */
+      ASS_CARD._BUFCARD.METKA[strlen
+        (ASS_CARD._BUFCARD.METKA)] = ' '; /* пишем разделитель полей*/
+      memcpy(ASS_CARD._BUFCARD.OPERAC,   //пишем код псевдооператора для выделения памяти под переменную */
+             "DC", 2 );
+      if (SYM[i].TYPE & BIN_BIT) // если двоичное
+      {
+        if (strcmp(SYM[i].RAZR, "15") <= 0) /* формируем операнды псевдооперации DC         */
+          strcpy(ASS_CARD._BUFCARD.OPERAND,      /* для случая полуслова   */ "H\'");
+        else                                      /* или                    */
+          strcpy(ASS_CARD._BUFCARD.OPERAND,      /* для случая слова       */ "F\'" );
+      }
+      else if (SYM[i].TYPE & DEC_BIT)
+      {
+        strcpy(ASS_CARD._BUFCARD.OPERAND, "PL3\'");     // стандартная длина десятичной переменной
+        if (strcmp(SYM[i].RAZR, "0")) ASS_CARD._BUFCARD.OPERAND[2] = SYM[i].RAZR[0]; // если указана пользователем
+      }
+      strcat(ASS_CARD._BUFCARD.OPERAND, SYM[i].INIT);
+      ASS_CARD._BUFCARD.OPERAND[strlen        /* замыкающий апостроф    */
+        (ASS_CARD._BUFCARD.OPERAND)] = '\'';  /*          и             */
+      COMMENT = "Определение переменной";
+      ZKARD();                                 /* запомнить операцию     */
 						  /*    Ассемблера          */
-       }
-     }
-   }
-						  /* далее идет блок декла- */
-						  /* ративных ассемблеровс- */
-						  /* ких EQU-операторов, оп-*/
-						  /* ределяющих базовый и   */
-						  /* рабочий регистры общего*/
-						  /* назначения             */
-
-  memcpy ( ASS_CARD._BUFCARD.METKA, "RBASE", 5 ); /* формирование EQU-псев- */
-  memcpy ( ASS_CARD._BUFCARD.OPERAC, "EQU",3 );   /* дооперации определения */
-  memcpy ( ASS_CARD._BUFCARD.OPERAND, "15", 2 );  /* номера базового регист-*/
-						  /* ра общего назначения   */
-						  /*           и            */
-  ZKARD ();                                       /* запоминание ее         */
-
-  memcpy ( ASS_CARD._BUFCARD.METKA, "RRAB", 4 );  /* формирование EQU-псев- */
-  memcpy ( ASS_CARD._BUFCARD.OPERAC, "EQU",3 );   /* дооперации определения */
-  memcpy ( ASS_CARD._BUFCARD.OPERAND, "5", 1 );   /* номера базового регист-*/
-						  /* ра общего назначения   */
-						  /*            и           */
-  ZKARD ();                                       /* запоминание ее         */
-
-  memcpy ( ASS_CARD._BUFCARD.OPERAC, "END", 3 );  /* формирование кода ас-  */
+    }
+  }
+      /* далее идет блок декларативных ассемблеровс- */
+      /* ких EQU-операторов, определяющих регистры */
+  for (i = 0; i < ISYM; i++)
+  {
+    if (SYM[i].TYPE & EQU_BIT)
+    {
+      memcpy(ASS_CARD._BUFCARD.METKA, SYM[i].NAME, strlen(SYM[i].NAME)); /* формирование EQU-псев- */
+      memcpy(ASS_CARD._BUFCARD.OPERAC, "EQU", 3);   /* дооперации */
+      COMMENT = "DEFINE register";
+      memcpy(ASS_CARD._BUFCARD.OPERAND, SYM[i].INIT, strlen(SYM[i].INIT));
+      ZKARD();
+    }
+  }
+  memcpy(ASS_CARD._BUFCARD.OPERAC, "END", 3);  /* формирование кода ас-  */
 						  /* семблеровской псевдо-  */
 						  /* операции END,          */
   i = 0;
-
   while ( FORMT [1][i] != '\x0' )                 /* ее операнда            */
-   ASS_CARD._BUFCARD.OPERAND [i] = FORMT [1][i++];/*         и              */
+    ASS_CARD._BUFCARD.OPERAND [i] = FORMT[1][i++];/*         и              */
 	COMMENT = "Конец программы";
-  memcpy ( ASS_CARD._BUFCARD.COMM,                /* построчного коментария */
-			  COMMENT, COMM_LENGTH () );
 
-  ZKARD ();                                       /* запоминание псевдоопе- */
-						  /* рации                  */
-
-  return 0;                                       /* завершение программы   */
+  ZKARD ();         /* запоминание псевдооперации */
+  return 0;             /* завершение программы   */
  }
 
 /*..........................................................................*/
@@ -1785,45 +2667,41 @@ int OEN2 ()
 						  /* вания арифметический   */
 
 int OPA2 ()
- {
+{
   int i;
 
-  FORM ();                                        /*форматируем ПЛ1-оператор*/
+  //FORM ();                                        /*форматируем ПЛ1-оператор*/
 						  /*присваивания арифметич. */
 
+  char var_name[10] = "\0";
+  strcpy_next_word(var_name, 10, &STROKA[DST[I2].DST2]);
+
   for ( i = 0; i < ISYM; i++ )
-   {                                              /* если идентификатор пра-*/
-						  /* вой части оператора оп-*/
-    if ( !strcmp ( SYM [i].NAME, FORMT [0] )  &&  /* ределен ранее через    */
-	 strlen ( SYM [i].NAME ) ==               /* оператор DCL, то:      */
-			     strlen ( FORMT [0] )
-       )
-       {
-	  if ( SYM [i].TYPE == 'B' )              /* если этот идентификатор*/
-	   {                                      /* имеет тип bin fixed,то:*/
+  {
+    if (!strcmp(SYM[i].NAME, var_name)) // if exists
+    {
+      if (SYM[i].TYPE & BIN_BIT)              /* если этот идентификатор*/
+      {                                      /* имеет тип bin,то:*/
 
-	    if ( strcmp ( SYM [i].RAZR, "15" )    /* если bin fixed (15),то:*/
+        if (strcmp(SYM[i].RAZR, "15" )    /* если bin fixed (15),то:*/
 					    <= 0 )
-	     memcpy ( ASS_CARD._BUFCARD.OPERAC,   /* сформировать команду   */
-				       "STH", 3 );/* записи полуслова       */
+          memcpy(ASS_CARD._BUFCARD.OPERAC,   /* сформировать команду   */
+               "STH", 3);/* записи полуслова       */
 
-	    else                                  /* иначе:                 */
-	     memcpy ( ASS_CARD._BUFCARD.OPERAC,   /* команду записи слова   */
-					"ST", 2 );
+        else                                  /* иначе:                 */
+          memcpy(ASS_CARD._BUFCARD.OPERAC,   /* команду записи слова   */
+            "ST", 2);
 
-	    strcpy ( ASS_CARD._BUFCARD.OPERAND,   /*       доформировать    */
-					"RRAB," );/*          операнды      */
+      strcpy(ASS_CARD._BUFCARD.OPERAND,   /*       доформировать    */
+          "@RRAB,");/*          операнды      */
 
-	    strcat ( ASS_CARD._BUFCARD.OPERAND,   /*           команды      */
-				      FORMT [0]) ;
+      strcat(ASS_CARD._BUFCARD.OPERAND,   /*           команды      */
+              var_name) ;
 
-	    ASS_CARD._BUFCARD.OPERAND [ strlen    /*              и         */
-	    ( ASS_CARD._BUFCARD.OPERAND ) ] = ' ';
-			COMMENT = "Формирование значения арифм.выражения";
-	    memcpy ( ASS_CARD._BUFCARD.COMM,      /* построчный коментарий  */
-	    COMMENT,
-					    COMM_LENGTH () );
-	    ZKARD ();                             /* запомнить операцию     */
+      ASS_CARD._BUFCARD.OPERAND[strlen    /*              и         */
+      (ASS_CARD._BUFCARD.OPERAND)] = ' ';
+      COMMENT = "Форм знач арифм.выражения";
+      ZKARD();                             /* запомнить операцию     */
 						  /* Ассемблера  и          */
 	    return 0;                             /* завершить программу    */
 	   }
@@ -1839,7 +2717,6 @@ int OPA2 ()
 						  /* ПЛ1-оператор DCL,то за-*/
 						  /* вершение с диагностикой*/
 						  /* ошибки                 */
-
  }
 
 /*..........................................................................*/
@@ -1857,37 +2734,32 @@ int OPA2 ()
 int OPR2 ()
  {
   char i = 0;
-  FORM ();                                        /* форматируем оператор   */
+  FORM();                                        /* форматируем оператор   */
 						  /* ПЛ1 - "начало процедур-*/
-						  /* ного блока"            */
-  while ( FORMT [0][i] != '\x0' )
-   ASS_CARD._BUFCARD.METKA [i++] = FORMT [0][i];  /* нулевой терм используем*/
+              /* ного блока"            */
+  ASS_CARD.BUFCARD[79] = '\n';
+  while (FORMT[0][i] != '\x0')
+   ASS_CARD._BUFCARD.METKA[i++] = FORMT[0][i];  /* нулевой терм используем*/
 						  /* как метку в START-псев-*/
 						  /* дооперации Ассемблера  */
 
-  memcpy ( ASS_CARD._BUFCARD.OPERAC, "START", 5 );/* достраиваем код и опе- */
-  memcpy ( ASS_CARD._BUFCARD.OPERAND, "0", 1 );   /* ранды  в  START-псевдо-*/
+  memcpy(ASS_CARD._BUFCARD.OPERAC, "START", 5);/* достраиваем код и опе- */
+  memcpy(ASS_CARD._BUFCARD.OPERAND, "0", 1);   /* ранды  в  START-псевдо-*/
   COMMENT = "Начало программы";
-  memcpy ( ASS_CARD._BUFCARD.COMM,                /* операции Ассемблера    */
-		      COMMENT, COMM_LENGTH () );
-  ZKARD ();                                       /* запоминаем карту Ассем-*/
+  ZKARD();                                       /* запоминаем карту Ассем-*/
 						  /* блера                  */
 
-  memcpy ( ASS_CARD._BUFCARD.OPERAC, "BALR", 4 ); /* формируем BALR-операцию*/
-  memcpy ( ASS_CARD._BUFCARD.OPERAND,             /* Ассемблера             */
-				  "RBASE,0", 7 );
-	COMMENT = "Загрузить регистр базы";
-  memcpy ( ASS_CARD._BUFCARD.COMM,
-		  COMMENT, COMM_LENGTH () );
-  ZKARD ();                                       /* и запоминаем ее        */
+  memcpy(ASS_CARD._BUFCARD.OPERAC, "BALR", 4); /* формируем BALR-операцию*/
+  memcpy(ASS_CARD._BUFCARD.OPERAND,             /* Ассемблера             */
+          "@RBAS,0", 7 );
+  COMMENT = "Загрузить регистр базы";
+  ZKARD();                                       /* и запоминаем ее        */
 
-  memcpy ( ASS_CARD._BUFCARD.OPERAC, "USING", 5 );/* формируем USING-псевдо-*/
-  memcpy ( ASS_CARD._BUFCARD.OPERAND,             /* операцию Ассемблера    */
-				   "*,RBASE", 7 );
-	COMMENT = "Назначить регистр базой";
-  memcpy ( ASS_CARD._BUFCARD.COMM,
-		  COMMENT, COMM_LENGTH () );
-  ZKARD ();                                       /* и запоминаем ее        */
+  memcpy(ASS_CARD._BUFCARD.OPERAC, "USING", 5);/* формируем USING-псевдо-*/
+  memcpy(ASS_CARD._BUFCARD.OPERAND,             /* операцию Ассемблера    */
+           "*,@RBAS", 7);
+  COMMENT = "Назначить регистр базой";
+  ZKARD();                                       /* и запоминаем ее        */
 
   return 0;                                       /* завершить подпрограмму */
  }
@@ -1972,11 +2844,11 @@ int ZNK2 ()
 
 						  /* Суть алгоритма управле-*/
 						  /*ния  в  последовательной*/
-int gen_COD ()                                    /*интерпретации строк сте-*/
- {                                                /*ка достижений  в направ-*/
+int gen_COD()                                    /*интерпретации строк сте-*/
+{                                                /*ка достижений  в направ-*/
   int NOSH;                                       /*лении от дна к вершине. */
 
-  int (* FUN [NNETRM][2]) () =                    /*При этом каждая строка  */
+  int (*FUN[NNETRM][2])() =                    /*При этом каждая строка  */
    {                                              /*воспринимается как кома-*/
      {/*    1  */    AVI1, AVI2 },                /*нда абстрактной ЭВМ со  */
      {/*    2  */    BUK1, BUK2 },                /*следующими полями:      */
@@ -1996,38 +2868,27 @@ int gen_COD ()                                    /*интерпретации �
      {/*   16  */    ZNK1, ZNK2 }
    };
 
-  for ( I2 = 0; I2 < L; I2++ )                    /* организация первого    */
-   if ( ( NOSH = FUN [                            /* прохода семантического */
-		      numb ( DST [I2].DST1, 3 )   /* вычисления             */
-		     ][0] ()
-	) != 0
-      )
-    return (NOSH);                                /* выход из программы     */
-						  /* по ошибке              */
+  for (I2 = 0; I2 < L; I2++)                    /* организация первого    */
+    if ((NOSH = FUN[numb(DST[I2].DST1, 3)][0]()) != 0)
+                                  /* прохода семантического вычисления */
+      return (NOSH);              /* выход из программы по ошибке */
 
-  for ( I2 = 0; I2 < L; I2++ )                    /* организация второго    */
-   if ( ( NOSH = FUN [                            /* прохода семантического */
-		      numb ( DST [I2].DST1, 3 )   /* вычисления             */
-		     ][1] ()
-	) != 0
-      )
-    return (NOSH);                                /* выход из программы     */
-						  /* по ошибке              */
-
-  return 0;                                       /* успешное завершение    */
-						  /* программы              */
- }
+  for (I2 = 0; I2 < L; I2++)                    /* организация второго    */
+    if ((NOSH = FUN[numb(DST[I2].DST1, 3)][1]()) != 0)
+                                  /* прохода семантического вычисления */
+      return (NOSH);              /* выход из программы по ошибке      */
+  return 0;                       /* успешное завершение программы     */
+}
 
 /*..........................................................................*/
 
-						  /*  п р о г р а м м а,    */
-						  /* организующая последова-*/
-						  /* тельную обработку ис-  */
-						  /* ходного текста:        */
-						  /* - лексич.анализатором; */
-						  /* - синтаксич.анализат.; */
-						  /* - семантич.вычислителем*/
-int main (int argc, char **argv )
+              /*  п р о г р а м м а,     */
+              /* организующая последова- */
+              /* тельную обработку исходного текста: */
+              /* - лексич.анализатором;  */
+              /* - синтаксич.анализат.;  */
+              /* - семантич.вычислителем */
+int main (int argc, char **argv)
 {                                                /* рабочие переменные:    */
   FILE *fp;                                       /* - указатель на файл;   */
   
@@ -2090,33 +2951,33 @@ int main (int argc, char **argv )
 
 main1:                                            /* по завершении чтения   */
 						  /* исх.файла формируем    */
-  fclose ( fp );                                 /* префикс имени выходного*/
+  fclose(fp);                                 /* префикс имени выходного*/
   printf("readed %d block from input file\n", NISXTXT);
 #ifdef _DEBUG_SINT
   fprintf(stderr, "SINT 288 is %s\n", SINT[288].DER);
 #endif
-  NFIL [ strlen ( NFIL )-3 ] = '\x0';            /* Ассемблеровского файла */
+  NFIL[strlen(NFIL) - 3] = '\0';            /* Ассемблеровского файла */
 
-  memset ( ASS_CARD.BUFCARD, ' ', 80 );           /* чистка буфера строки   */
+  memset(ASS_CARD.BUFCARD, ' ', 80);           /* чистка буфера строки   */
 						  /* выходного ассемблеров- */
 						  /* ского файла            */
 
-  compress_ISXTXT ();                             /* лексический анализ     */
+  compress_ISXTXT();                             /* лексический анализ     */
 						  /* исходного текста       */
 
-  build_TPR ();                                   /* построение матрицы     */
+  build_TPR();                                   /* построение матрицы     */
 						  /* преемников             */
 						  #ifdef _DEBUG_SINT
 	print_TRP();
 	#endif
-  if ( (sint_ANAL ()) )                           /* синтаксический анализ  */
+  if (sint_ANAL ())                           /* синтаксический анализ  */
   {                                              /* исходного текста       */
     STROKA [I4 +20] = '\x0';
     fprintf                                       /* если найдены ошибки    */
     ( stderr,                                           /* синтаксиса, то :       */
        "%s%s%s%s\n",
        "ошибка синтаксиса в исх.тексте -> ",      /* выдаем диагностику и   */
-       "\"...",&STROKA [I4], "...\""
+       "\"...", &STROKA[I4], "...\""
     );
     fprintf
     (stderr,
@@ -2126,7 +2987,7 @@ main1:                                            /* по завершении �
   }
   else                                            /* иначе делаем           */
   {
-   	printf("sint analysys finished\n");
+    printf("sint analysys finished\n");
     switch ( gen_COD () )                         /* семантическое вычислен.*/
      {
       case  0:                                    /*если код завершения = 0,*/
