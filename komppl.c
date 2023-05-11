@@ -1699,12 +1699,12 @@ void conv_from_dec_fixed_to_bin_fixed(struct SYM_t var, char * reg)
   //MVC @MRAB+n(m),var
   memcpy(ASS_CARD._BUFCARD.OPERAC, "MVC", 3);
   strcpy(ASS_CARD._BUFCARD.OPERAND, "@MRAB");//+5(3),B
-  if (SYM[dec_rab_var.sym_mrab].RAZR[0] != '8')
+  if (var.RAZR[0] != '8')
   {
     char str[50];
     char fmt[] = "+%c(%c)";
-    sprintf(str, fmt, '0' + '8' - SYM[dec_rab_var.sym_mrab].RAZR[0],
-      SYM[dec_rab_var.sym_mrab].RAZR[0]);
+    sprintf(str, fmt, '0' + '8' - var.RAZR[0],
+      var.RAZR[0]);
     strcat(ASS_CARD._BUFCARD.OPERAND, str);
   }
   strcat(ASS_CARD._BUFCARD.OPERAND, ",");
@@ -1850,7 +1850,7 @@ parse_avi:
             // TODO conv from dec to bin
             memcpy(ASS_CARD._BUFCARD.OPERAC, "MVC", 3);
             strcpy(ASS_CARD._BUFCARD.OPERAND, "@MRAB");//+5(3),B
-            if (SYM[dec_rab_var.sym_mrab].RAZR[0] != '8')
+            if (SYM[i].RAZR[0] != '8')
             {
               char str[50];
               char fmt[] = "+%c(%c)";
