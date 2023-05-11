@@ -2649,8 +2649,8 @@ int OEN2()
 						  /* семблеровской псевдо-  */
 						  /* операции END,          */
   i = 0;
-  while ( FORMT [1][i] != '\x0' )                 /* ее операнда            */
-    ASS_CARD._BUFCARD.OPERAND [i] = FORMT[1][i++];/*         и              */
+  //while ( FORMT [1][i] != '\x0' )                 /* ее операнда            */
+  //  ASS_CARD._BUFCARD.OPERAND [i] = FORMT[1][i++];/*         и              */
 	COMMENT = "Конец программы";
 
   ZKARD ();         /* запоминание псевдооперации */

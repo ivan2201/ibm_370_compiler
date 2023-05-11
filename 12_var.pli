@@ -4,3 +4,4 @@ DCL B DEC FIXED INIT ( 3 );
 DCL C BIN FIXED;
 C = A = ( B * A );
 END EX12;
+
