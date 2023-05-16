@@ -1830,9 +1830,9 @@ parse_avi:
                 strcpy(ASS_CARD._BUFCARD.OPERAND, "15,*+8");
                 ASS_CARD._BUFCARD.OPERAND[strlen(ASS_CARD._BUFCARD.OPERAND)] = ' ';
                 ZKARD();
-                //LH                  @RRAB.@TRUE
+                //LH                  @RRAB,@TRUE
                 memcpy(ASS_CARD._BUFCARD.OPERAC, load, 2);
-                strcpy(ASS_CARD._BUFCARD.OPERAND, "@RRAB.@TRUE");
+                strcpy(ASS_CARD._BUFCARD.OPERAND, "@RRAB,@TRUE");
                 ASS_CARD._BUFCARD.OPERAND[strlen(ASS_CARD._BUFCARD.OPERAND)] = ' ';
                 ZKARD();
 
@@ -2044,9 +2044,9 @@ parse_avi:
           strcpy(ASS_CARD._BUFCARD.OPERAND, "15,*+8");
           ASS_CARD._BUFCARD.OPERAND[strlen(ASS_CARD._BUFCARD.OPERAND)] = ' ';
           ZKARD();
-          //LH                  @RRAB.@TRUE
+          //LH                  @RRAB,@TRUE
           memcpy(ASS_CARD._BUFCARD.OPERAC, load, 2);
-          strcpy(ASS_CARD._BUFCARD.OPERAND, "@RRAB.@TRUE");
+          strcpy(ASS_CARD._BUFCARD.OPERAND, "@RRAB,@TRUE");
           ASS_CARD._BUFCARD.OPERAND[strlen(ASS_CARD._BUFCARD.OPERAND)] = ' ';
           LAST_OPA_TYPE = BIN_BIT | FIXED_BIT;
           ZKARD();
@@ -2198,14 +2198,14 @@ parse_high_level_avi:
                   ASS_CARD._BUFCARD.OPERAND[strlen(ASS_CARD._BUFCARD.OPERAND)] = ' ';
                   COMMENT = "goto end of equal operator";
                   ZKARD();
-                  //LH                  @RRAB.@TRUE
+                  //LH                  @RRAB,@TRUE
                   memcpy(ASS_CARD._BUFCARD.OPERAC, load, 2);
-                  strcpy(ASS_CARD._BUFCARD.OPERAND, "@RRAB.@TRUE");
+                  strcpy(ASS_CARD._BUFCARD.OPERAND, "@RRAB,@TRUE");
                   ASS_CARD._BUFCARD.OPERAND[strlen(ASS_CARD._BUFCARD.OPERAND)] = ' ';
                   COMMENT = "load true";
                   ZKARD();
                   LAST_OPA_TYPE = BIN_BIT | FIXED_BIT;
-                  // TODO support next bool AVI processing
+                  // TODO support next bool AVI processin
                   return 0;
                 }
               }
@@ -2418,9 +2418,9 @@ parse_high_level_avi:
             ASS_CARD._BUFCARD.OPERAND[strlen(ASS_CARD._BUFCARD.OPERAND)] = ' ';
             COMMENT = "goto store result";
             ZKARD();
-            //LH                  @RRAB.@TRUE
+            //LH                  @RRAB,@TRUE
             memcpy(ASS_CARD._BUFCARD.OPERAC, load, 2);
-            strcpy(ASS_CARD._BUFCARD.OPERAND, "@RRAB.@TRUE");
+            strcpy(ASS_CARD._BUFCARD.OPERAND, "@RRAB,@TRUE");
             ASS_CARD._BUFCARD.OPERAND[strlen(ASS_CARD._BUFCARD.OPERAND)] = ' ';
             LAST_OPA_TYPE = BIN_BIT | FIXED_BIT;
             COMMENT = "load TRUE to result";
@@ -2584,7 +2584,7 @@ int OEN2()
 						  /*ного возврата управления*/
 						  /* в вызывающую программу */
 
-  memcpy(ASS_CARD._BUFCARD.OPERAND,"15,@RVIX", 8);/* операнды команды и     */
+  memcpy(ASS_CARD._BUFCARD.OPERAND,"@RBAS,@RVIX", 11);/* операнды команды и     */
 
   COMMENT = "Выход из программы";
   ZKARD();                                       /* запомнить опреацию     */

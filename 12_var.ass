@@ -1,0 +1,27 @@
+EX12     START 0            Начало программы                    
+         BALR  @RBAS,0      Загрузить регистр базы         
+         USING *,@RBAS      Назначить регистр базой       
+         MVC   @MRAB+5(3),B Загрузка dec в память со смещ 
+         CVB   @RRAB,@MRAB  преобр из dec в bin c загрузкой  
+         MH    @RRAB,A      умножение                                 
+         LR    @RROP,@RRAB  перемещение результата RR     
+         LH    @RRAB,A      Загрузка переменной в регис
+         CR    @RRAB,@RROP  сравнение знач в reg                 
+         BC    8,*+12       if eq goto load true                               
+         LH    @RRAB,@FALS  load false                                         
+         BC    15,*+8       goto end of equal operator                         
+         LH    @RRAB,@TRUE  load true                                          
+         STH   @RRAB,C      Форм знач арифм.выражения    
+         BCR   @RBAS,@RVIX  Выход из программы                 
+A        DC    H'3'         Определение переменной        
+B        DC    PL3'3'       Определение переменной        
+C        DC    H'0'         Определение переменной        
+         DS    0F           выравнивание                           
+@MRAB    DC    PL8'0'       Определение переменной        
+@TRUE    DC    H'1'         Определение переменной        
+@FALS    DC    H'0'         Определение переменной        
+@RBAS    EQU   12           DEFINE register                                    
+@RVIX    EQU   14           DEFINE register                                    
+@RRAB    EQU   2            DEFINE register                                    
+@RROP    EQU   3            DEFINE register                                    
+         END                Конец программы                      
