@@ -4,14 +4,14 @@ all: komppl.exe kompassr.exe absloadm.exe
 #	gcc -o komppl.o komppl.c
 komppl.exe: komppl.c
 	@echo "________k o m p p l . e x e        g e n e r a t i o n______"
-	gcc -o komppl.exe komppl.c
+	gcc -g -ggdb -o komppl.exe komppl.c
 	@echo "____________________________________________________________"
 kompassr.exe: kompassr.c
 	@echo "________k o m p a s s r . e x e    g e n e r a t i o n______"
-	gcc -o kompassr.exe kompassr.c
+	gcc -g -ggdb -o kompassr.exe kompassr.c
 	@echo "____________________________________________________________"
 absloadm.exe: absloadm.c
 	@echo "________a b s l o a d m . e x e    g e n e r a t i o n______"
-	gcc -o absloadm.exe absloadm.c -lncurses
+	gcc -g -ggdb -o absloadm.exe absloadm.c -lncurses
 	@echo "____________________________________________________________"
 
